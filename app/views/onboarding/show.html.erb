@@ -1,0 +1,150 @@
+<div class="page-shell page-shell--narrow">
+  <% steps = %w[profile_info preferences telegram_connect] %>
+  <% current_idx = steps.index(@step) || 0 %>
+
+  <section class="settings-layout">
+    <div class="surface-panel surface-panel--accent form-card">
+      <div class="form-card__header">
+        <span class="eyebrow">Onboarding</span>
+        <h1 class="page-title">Set the tone for how Ayla manages your presence.</h1>
+        <p class="section-copy section-copy--lead">
+          A few deliberate setup choices now make the assistant sharper later: better reminders, better questions, better drafts.
+        </p>
+      </div>
+
+      <div class="progress-steps">
+        <% steps.each_with_index do |_step, idx| %>
+          <span class="<%= idx <= current_idx ? 'is-active' : '' %>"></span>
+        <% end %>
+      </div>
+
+      <% case @step %>
+      <% when "pending", "profile_info" %>
+        <div class="form-card__header" style="margin-top: 1.4rem;">
+          <span class="eyebrow">Step 1</span>
+          <h2 class="section-title" style="font-size: clamp(1.6rem, 4vw, 2.4rem); max-width: none;">Start with who you are.</h2>
+          <p class="section-copy">This gives Ayla the base layer for prompts that feel aligned with your work and your brand.</p>
+        </div>
+
+        <%= form_with url: onboarding_path, method: :patch, class: "field-grid" do |f| %>
+          <%= hidden_field_tag :step, "profile_info" %>
+
+          <div class="field-stack">
+            <label class="field-label">Short bio</label>
+            <%= f.text_area :bio, value: @profile.bio, rows: 4,
+                class: "field-input",
+                placeholder: "What do you build, share, or want people to remember about your work?",
+                name: "user_profile[bio]" %>
+          </div>
+
+          <div class="field-stack">
+            <label class="field-label">Timezone</label>
+            <%= select_tag "user_profile[timezone]",
+                options_for_select(ActiveSupport::TimeZone.all.map { |tz| [tz.to_s, tz.name] }, @profile.timezone),
+                class: "field-input" %>
+          </div>
+
+          <%= f.submit "Continue", class: "button-primary button-primary--full cursor-pointer" %>
+        <% end %>
+
+      <% when "preferences" %>
+        <div class="form-card__header" style="margin-top: 1.4rem;">
+          <span class="eyebrow">Step 2</span>
+          <h2 class="section-title" style="font-size: clamp(1.6rem, 4vw, 2.4rem); max-width: none;">Choose the publishing rhythm.</h2>
+          <p class="section-copy">Set how often Ayla should keep you honest and what tone should come through in the drafts.</p>
+        </div>
+
+        <%= form_with url: onboarding_path, method: :patch, class: "field-grid" do %>
+          <%= hidden_field_tag :step, "preferences" %>
+
+          <div class="field-stack">
+            <label class="field-label">Content tone</label>
+            <%= select_tag "user_preference[tone]",
+                options_for_select(UserPreference::TONES.map { |tone| [tone.titleize, tone] }, current_user.user_preference.tone),
+                class: "field-input" %>
+          </div>
+
+          <div class="field-stack">
+            <label class="field-label">Posting frequency</label>
+            <%= select_tag "user_preference[posting_frequency]",
+                options_for_select(UserPreference::FREQUENCIES.map { |frequency| [frequency.titleize, frequency] }, current_user.user_preference.posting_frequency),
+                class: "field-input" %>
+          </div>
+
+          <div class="field-stack">
+            <label class="field-label">Special instructions</label>
+            <%= text_area_tag "user_preference[custom_instructions]", current_user.user_preference.custom_instructions,
+                rows: 4,
+                class: "field-input",
+                placeholder: "Examples: keep it sharp, push me to capture behind-the-scenes moments, focus on founder lessons." %>
+          </div>
+
+          <%= submit_tag "Continue", class: "button-primary button-primary--full cursor-pointer" %>
+        <% end %>
+
+      <% when "telegram_connect" %>
+        <div class="form-card__header" style="margin-top: 1.4rem;">
+          <span class="eyebrow">Step 3</span>
+          <h2 class="section-title" style="font-size: clamp(1.6rem, 4vw, 2.4rem); max-width: none;">Connect the assistant.</h2>
+          <p class="section-copy">This is where Ayla becomes useful in real life: reminders, follow-ups, captured moments, and drafts all start here.</p>
+        </div>
+
+        <% if current_user.telegram_connected? %>
+          <div class="mini-panel">
+            <span class="mini-panel__label">Connected</span>
+            <strong class="mini-panel__title">Telegram is ready.</strong>
+            <p>Ayla can now ask for moments, context, videos, screenshots, and turn them into a steady publishing flow.</p>
+          </div>
+        <% elsif @telegram_connect_url.present? %>
+          <div class="stack">
+            <div class="mini-panel">
+              <span class="mini-panel__label">One tap connect</span>
+              <strong class="mini-panel__title">Open @<%= @telegram_bot_username %></strong>
+              <p>Tap Start in Telegram and Ayla will link directly to your account. The secure link expires after 15 minutes.</p>
+            </div>
+
+            <%= link_to "Connect Telegram", @telegram_connect_url,
+                target: "_blank",
+                rel: "noopener",
+                class: "button-primary button-primary--full" %>
+          </div>
+        <% else %>
+          <p class="section-copy">
+            Add <code>TELEGRAM_BOT_USERNAME</code> to show the Telegram connect button here.
+          </p>
+        <% end %>
+
+        <%= form_with url: onboarding_path, method: :patch, class: "field-grid", style: "margin-top: 1.4rem;" do %>
+          <%= hidden_field_tag :step, "telegram_connect" %>
+          <%= submit_tag current_user.telegram_connected? ? "Finish setup" : "Skip for now",
+              class: "button-secondary button-secondary--full cursor-pointer" %>
+        <% end %>
+      <% end %>
+    </div>
+
+    <aside class="surface-panel form-card">
+      <div class="form-card__header">
+        <span class="eyebrow">What you are building</span>
+        <h2 class="section-title" style="font-size: clamp(1.5rem, 4vw, 2.2rem); max-width: none;">A presence system, not a content machine.</h2>
+        <p class="section-copy">
+          Ayla is here to keep your real work visible: launches, lessons, progress, process, client wins, and the moments you normally forget to publish.
+        </p>
+      </div>
+
+      <div class="stack">
+        <div class="mini-panel">
+          <span class="mini-panel__label">Reminds</span>
+          <p>It catches the silence before your feed goes cold.</p>
+        </div>
+        <div class="mini-panel">
+          <span class="mini-panel__label">Collects</span>
+          <p>It asks for the clip, photo, screenshot, or context that makes the story real.</p>
+        </div>
+        <div class="mini-panel">
+          <span class="mini-panel__label">Drafts</span>
+          <p>It organizes those fragments into posts and stories you would actually want your name on.</p>
+        </div>
+      </div>
+    </aside>
+  </section>
+</div>

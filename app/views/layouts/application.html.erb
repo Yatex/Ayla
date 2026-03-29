@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html class="h-full">
+  <head>
+    <title>Ayla — Your Personal Media Manager</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "application" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="<%= ayla_body_class %>">
+    <div class="site-orb site-orb--violet"></div>
+    <div class="site-orb site-orb--pink"></div>
+    <div class="site-orb site-orb--blue"></div>
+
+    <div class="page-frame">
+      <%= render "shared/site_nav" %>
+
+      <main class="site-main">
+        <% if notice.present? || alert.present? %>
+          <div class="shell shell--wide flash-stack">
+            <% if notice.present? %>
+              <div class="<%= flash_class(:notice) %>"><%= notice %></div>
+            <% end %>
+            <% if alert.present? %>
+              <div class="<%= flash_class(:alert) %>"><%= alert %></div>
+            <% end %>
+          </div>
+        <% end %>
+
+        <%= yield %>
+      </main>
+
+      <%= render "shared/site_footer" %>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,22 @@
+<footer class="site-footer">
+  <div class="shell shell--wide site-footer__inner">
+    <div class="site-footer__copy">
+      <p class="eyebrow">Ayla</p>
+      <p>
+        A premium personal media manager that keeps your real work, moments, and progress moving into public view.
+      </p>
+    </div>
+
+    <div class="site-footer__links">
+      <% if ayla_signed_in? %>
+        <%= link_to "Dashboard", dashboard_path, class: "footer-link" %>
+        <%= link_to "Drafts", content_drafts_path, class: "footer-link" %>
+        <%= link_to "Settings", settings_path, class: "footer-link" %>
+      <% else %>
+        <%= link_to "How it works", root_path(anchor: "how-it-works"), class: "footer-link" %>
+        <%= link_to "Why it's different", root_path(anchor: "difference"), class: "footer-link" %>
+        <%= link_to "Sign in", new_user_session_path, class: "footer-link" %>
+      <% end %>
+    </div>
+  </div>
+</footer>

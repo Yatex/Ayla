@@ -1,0 +1,66 @@
+<section class="auth-shell">
+  <div class="auth-layout">
+    <div class="auth-story">
+      <span class="eyebrow">Get started</span>
+      <h1 class="page-title">Hire Ayla for your personal brand.</h1>
+      <p class="section-copy section-copy--lead">
+        Ayla is built for people with real work to show, but not enough time or attention to keep translating every moment into content.
+      </p>
+
+      <div class="auth-highlights">
+        <div class="auth-highlight">
+          <span class="mini-panel__label">Not generic AI</span>
+          <p>It does not invent a fake personality. It works from your actual life, your actual voice, and your actual momentum.</p>
+        </div>
+        <div class="auth-highlight">
+          <span class="mini-panel__label">A real operating loop</span>
+          <p>Remind. Ask. Draft. Approve. Stay present. Repeat long enough for your body of work to compound.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-card">
+      <span class="eyebrow">Create account</span>
+      <h2 class="section-title" style="font-size: clamp(1.6rem, 4vw, 2.3rem); max-width: none;">Start your Ayla setup</h2>
+      <p class="section-copy">A few details now, and the assistant starts working like a real media manager later.</p>
+
+      <% if resource.errors.any? %>
+        <div class="flash flash--alert" style="margin-top: 1rem;">
+          <%= resource.errors.full_messages.to_sentence %>
+        </div>
+      <% end %>
+
+      <%= form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
+        <div class="field-stack">
+          <label class="field-label">Name</label>
+          <%= f.text_field :name, autofocus: true, autocomplete: "name", class: "field-input" %>
+        </div>
+
+        <div class="field-stack">
+          <label class="field-label">Email</label>
+          <%= f.email_field :email, autocomplete: "email", class: "field-input" %>
+        </div>
+
+        <div class="field-stack">
+          <label class="field-label">Password</label>
+          <%= f.password_field :password, autocomplete: "new-password", class: "field-input" %>
+          <% if @minimum_password_length %>
+            <span class="field-hint"><%= @minimum_password_length %> characters minimum.</span>
+          <% end %>
+        </div>
+
+        <div class="field-stack">
+          <label class="field-label">Confirm password</label>
+          <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "field-input" %>
+        </div>
+
+        <%= f.submit "Create account", class: "button-primary button-primary--full cursor-pointer" %>
+      <% end %>
+
+      <p class="auth-card__switch">
+        Already have an account?
+        <%= link_to "Sign in", new_user_session_path, class: "text-link" %>
+      </p>
+    </div>
+  </div>
+</section>

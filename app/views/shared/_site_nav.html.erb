@@ -1,0 +1,46 @@
+<header class="site-nav">
+  <div class="shell shell--wide">
+    <div class="site-nav__inner">
+      <%= link_to(ayla_signed_in? ? dashboard_path : root_path, { class: "brand-mark" }) do %>
+        <span class="brand-mark__signal"></span>
+        <span>
+          <span class="brand-mark__title">AYLA</span>
+          <span class="brand-mark__tag">your personal media manager</span>
+        </span>
+      <% end %>
+
+      <% if ayla_signed_in? %>
+        <nav class="site-nav__links">
+          <%= link_to "Overview", dashboard_path, class: nav_link_classes(dashboard_path) %>
+          <%= link_to "Drafts", content_drafts_path, class: nav_link_classes(content_drafts_path, starts_with: "/content_drafts") %>
+          <%= link_to "Settings", settings_path, class: nav_link_classes(settings_path, starts_with: "/settings") %>
+        </nav>
+
+        <div class="site-nav__actions">
+          <div class="nav-presence">
+            <span class="nav-presence__dot <%= current_user.telegram_connected? ? 'nav-presence__dot--live' : '' %>"></span>
+            <div>
+              <strong><%= current_user.name %></strong>
+              <span><%= current_user.telegram_connected? ? "Telegram linked" : "Link Telegram to begin" %></span>
+            </div>
+          </div>
+
+          <%= link_to "Sign out", destroy_user_session_path,
+              data: { turbo_method: :delete },
+              class: "button-ghost button-ghost--sm" %>
+        </div>
+      <% else %>
+        <nav class="site-nav__links">
+          <%= link_to "How it works", root_path(anchor: "how-it-works"), class: nav_link_classes(root_path(anchor: "how-it-works")) %>
+          <%= link_to "Why it's different", root_path(anchor: "difference"), class: nav_link_classes(root_path(anchor: "difference")) %>
+          <%= link_to "Who it's for", root_path(anchor: "audience"), class: nav_link_classes(root_path(anchor: "audience")) %>
+        </nav>
+
+        <div class="site-nav__actions">
+          <%= link_to "Sign in", new_user_session_path, class: "button-ghost button-ghost--sm" %>
+          <%= link_to "Get started", new_user_registration_path, class: "button-primary button-primary--sm" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</header>

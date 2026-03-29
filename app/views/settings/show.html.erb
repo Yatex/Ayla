@@ -1,0 +1,130 @@
+<div class="page-shell">
+  <section class="page-hero">
+    <div class="surface-panel surface-panel--accent page-hero__content">
+      <span class="eyebrow">Settings</span>
+      <h1 class="page-title">Shape how Ayla follows up, drafts, and supports your presence.</h1>
+      <p class="section-copy section-copy--lead">
+        These preferences help Ayla sound more like you, stay aligned with your rhythm, and keep the chat assistant useful instead of noisy.
+      </p>
+    </div>
+
+    <div class="surface-panel page-hero__aside">
+      <span class="eyebrow">Assistant status</span>
+      <p class="section-copy">
+        <strong><%= @telegram&.active? ? "Telegram connected." : "Telegram not linked yet." %></strong>
+        <%= @telegram&.active? ? "Ayla can already prompt you and draft from your real moments." : "Link Telegram to activate the assistant workflow." %>
+      </p>
+    </div>
+  </section>
+
+  <section class="settings-layout">
+    <div class="stack">
+      <div class="surface-panel form-card">
+        <div class="form-card__header">
+          <span class="eyebrow">Profile</span>
+          <h2 class="section-title" style="font-size: clamp(1.5rem, 4vw, 2.2rem); max-width: none;">Ground the assistant in who you are.</h2>
+          <p class="section-copy">Your bio and timezone help Ayla prompt you at the right time and keep drafts anchored to your work.</p>
+        </div>
+
+        <%= form_with url: settings_path, method: :patch, class: "field-grid" do %>
+          <div class="field-stack">
+            <label class="field-label">Bio</label>
+            <%= text_area_tag "user_profile[bio]", @profile.bio, rows: 4,
+                class: "field-input",
+                placeholder: "What do you build, create, or want to be known for?" %>
+          </div>
+
+          <div class="field-stack">
+            <label class="field-label">Timezone</label>
+            <%= select_tag "user_profile[timezone]",
+                options_for_select(ActiveSupport::TimeZone.all.map { |tz| [tz.to_s, tz.name] }, @profile.timezone),
+                class: "field-input" %>
+          </div>
+
+          <%= submit_tag "Save profile", class: "button-primary button-primary--full cursor-pointer" %>
+        <% end %>
+      </div>
+
+      <div class="surface-panel form-card">
+        <div class="form-card__header">
+          <span class="eyebrow">Preferences</span>
+          <h2 class="section-title" style="font-size: clamp(1.5rem, 4vw, 2.2rem); max-width: none;">Tune the tone and publishing rhythm.</h2>
+          <p class="section-copy">Tell Ayla how often to stay on you and what kind of voice should come through in the drafts.</p>
+        </div>
+
+        <%= form_with url: settings_path, method: :patch, class: "field-grid" do %>
+          <div class="field-stack">
+            <label class="field-label">Tone</label>
+            <%= select_tag "user_preference[tone]",
+                options_for_select(UserPreference::TONES.map { |tone| [tone.titleize, tone] }, @preference.tone),
+                class: "field-input" %>
+          </div>
+
+          <div class="field-stack">
+            <label class="field-label">Posting frequency</label>
+            <%= select_tag "user_preference[posting_frequency]",
+                options_for_select(UserPreference::FREQUENCIES.map { |frequency| [frequency.titleize, frequency] }, @preference.posting_frequency),
+                class: "field-input" %>
+          </div>
+
+          <div class="field-stack">
+            <label class="field-label">Custom instructions</label>
+            <%= text_area_tag "user_preference[custom_instructions]", @preference.custom_instructions, rows: 4,
+                class: "field-input",
+                placeholder: "Examples: keep it more reflective, stay concise, push for story angles, avoid sounding polished." %>
+          </div>
+
+          <%= submit_tag "Save preferences", class: "button-primary button-primary--full cursor-pointer" %>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="stack">
+      <div class="surface-panel surface-panel--soft">
+        <div class="form-card__header">
+          <span class="eyebrow">Telegram</span>
+          <h2 class="section-title" style="font-size: clamp(1.5rem, 4vw, 2.2rem); max-width: none;">Connect the assistant where life actually happens.</h2>
+        </div>
+
+        <% if @telegram&.active? %>
+          <div class="mini-panel">
+            <span class="mini-panel__label">Linked account</span>
+            <strong class="mini-panel__title">@<%= @telegram.username || @telegram.first_name %></strong>
+            <p>Connected since <%= @telegram.connected_at&.strftime("%b %d, %Y") %>. Ayla can already prompt, collect, and draft from chat.</p>
+          </div>
+        <% elsif @telegram_connect_url.present? %>
+          <p class="section-copy">
+            Open Telegram, tap Start, and let Ayla begin asking for the moments, photos, clips, and context that should not be lost.
+          </p>
+          <%= link_to "Connect Telegram", @telegram_connect_url,
+              target: "_blank",
+              rel: "noopener",
+              class: "button-primary" %>
+          <p class="field-hint">This opens <strong>@<%= @telegram_bot_username %></strong>. The secure link expires after 15 minutes.</p>
+        <% else %>
+          <p class="section-copy">
+            Add <code>TELEGRAM_BOT_USERNAME</code> to your environment to show the one-tap connect link here.
+          </p>
+        <% end %>
+      </div>
+
+      <div class="surface-panel">
+        <span class="eyebrow">What Ayla will do</span>
+        <div class="stack">
+          <div class="mini-panel">
+            <span class="mini-panel__label">Remind</span>
+            <p>Notice when you have gone quiet and nudge you before another week slips by undocumented.</p>
+          </div>
+          <div class="mini-panel">
+            <span class="mini-panel__label">Ask</span>
+            <p>Request the photo, clip, voice note, or detail that turns a vague thought into a usable post.</p>
+          </div>
+          <div class="mini-panel">
+            <span class="mini-panel__label">Draft</span>
+            <p>Convert those real fragments into posts and stories that still feel grounded in your voice.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

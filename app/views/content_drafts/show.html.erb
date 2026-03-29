@@ -1,0 +1,37 @@
+<div class="page-shell page-shell--narrow">
+  <div class="stack">
+    <%= link_to "Back to drafts", content_drafts_path, class: "button-ghost button-ghost--sm", style: "width: fit-content;" %>
+
+    <section class="page-hero">
+      <div class="surface-panel surface-panel--accent page-hero__content">
+        <span class="eyebrow">Draft detail</span>
+        <h1 class="page-title">A piece built from a real moment.</h1>
+        <p class="section-copy section-copy--lead">
+          Review the exact copy, check where it sits in the approval flow, and keep the thread connected to what actually happened.
+        </p>
+      </div>
+
+      <div class="surface-panel page-hero__aside">
+        <span class="<%= draft_status_badge_class(@draft.status) %>"><%= @draft.status.titleize %></span>
+        <p class="section-copy">Created <%= @draft.created_at.strftime("%b %d, %Y at %l:%M %p") %></p>
+      </div>
+    </section>
+
+    <div class="surface-panel detail-body">
+      <p class="detail-copy"><%= @draft.body %></p>
+
+      <div class="metadata-list">
+        <p>Created: <%= @draft.created_at.strftime("%b %d, %Y at %l:%M %p") %></p>
+        <% if @draft.approved_at %>
+          <p>Approved: <%= @draft.approved_at.strftime("%b %d, %Y at %l:%M %p") %></p>
+        <% end %>
+        <% if @draft.rejected_at %>
+          <p>Rejected: <%= @draft.rejected_at.strftime("%b %d, %Y at %l:%M %p") %></p>
+        <% end %>
+        <% if @draft.rejection_reason.present? %>
+          <p>Reason: <%= @draft.rejection_reason %></p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

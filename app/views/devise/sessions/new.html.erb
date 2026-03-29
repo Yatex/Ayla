@@ -1,0 +1,53 @@
+<section class="auth-shell">
+  <div class="auth-layout">
+    <div class="auth-story">
+      <span class="eyebrow">Sign in</span>
+      <h1 class="page-title">Back to the desk where your presence gets handled.</h1>
+      <p class="section-copy section-copy--lead">
+        Open your drafts, reconnect the assistant, and keep the work you are already doing moving into public view.
+      </p>
+
+      <div class="auth-highlights">
+        <div class="auth-highlight">
+          <span class="mini-panel__label">Ayla remembers</span>
+          <p>The launch you almost forgot to post. The client win buried in Slack. The product lesson hidden in a busy week.</p>
+        </div>
+        <div class="auth-highlight">
+          <span class="mini-panel__label">Ayla follows up</span>
+          <p>It asks for the clip, screenshot, or context while the moment is still alive enough to matter.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-card">
+      <span class="eyebrow">Welcome back</span>
+      <h2 class="section-title" style="font-size: clamp(1.6rem, 4vw, 2.3rem); max-width: none;">Sign in to Ayla</h2>
+      <p class="section-copy">Stay visible without having to carry the whole system in your head.</p>
+
+      <% if resource.errors.any? %>
+        <div class="flash flash--alert" style="margin-top: 1rem;">
+          <%= resource.errors.full_messages.to_sentence %>
+        </div>
+      <% end %>
+
+      <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+        <div class="field-stack">
+          <label class="field-label">Email</label>
+          <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "field-input" %>
+        </div>
+
+        <div class="field-stack">
+          <label class="field-label">Password</label>
+          <%= f.password_field :password, autocomplete: "current-password", class: "field-input" %>
+        </div>
+
+        <%= f.submit "Sign in", class: "button-primary button-primary--full cursor-pointer" %>
+      <% end %>
+
+      <p class="auth-card__switch">
+        New here?
+        <%= link_to "Create an account", new_user_registration_path, class: "text-link" %>
+      </p>
+    </div>
+  </div>
+</section>
