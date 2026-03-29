@@ -1,0 +1,95 @@
+<div class="page-shell">
+  <section class="page-hero">
+    <div class="surface-panel page-hero__content">
+      <span class="eyebrow">Calendar</span>
+      <h1 class="page-title">Ayla’s operating calendar for the week ahead.</h1>
+      <p class="section-copy section-copy--lead">
+        Not a generic content calendar. A live list of the reminders, follow-ups, and queue-clearing moves that keep your presence active.
+      </p>
+    </div>
+
+    <div class="surface-panel surface-panel--soft page-hero__aside">
+      <span class="eyebrow">Calendar state</span>
+      <p class="section-copy">
+        <strong><%= @upcoming_tasks.count %> active tasks.</strong>
+        <%= current_user.telegram_connected? ? "Ayla can handle the next prompt directly in Telegram." : "Link Telegram to turn these tasks into real-time chat prompts." %>
+      </p>
+    </div>
+  </section>
+
+  <section class="dashboard-layout">
+    <div class="surface-panel surface-panel--accent">
+      <div class="section-header">
+        <span class="eyebrow">Upcoming tasks</span>
+        <h2 class="section-title" style="font-size: clamp(1.55rem, 4vw, 2.25rem); max-width: none;">What Ayla wants you to do next.</h2>
+      </div>
+
+      <div class="task-list">
+        <% @upcoming_tasks.each do |task| %>
+          <% task_path = workspace_task_path(task, telegram_connect_url: @telegram_connect_url) %>
+          <% external = workspace_task_external?(task, telegram_connect_url: @telegram_connect_url) %>
+          <%= link_to task_path,
+              class: workspace_task_classes(task),
+              target: (external ? "_blank" : nil),
+              rel: (external ? "noopener" : nil) do %>
+            <div class="task-card__header">
+              <span class="task-card__due"><%= task.due_label %></span>
+            </div>
+            <h3><%= task.title %></h3>
+            <p><%= task.detail %></p>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="stack">
+      <div class="surface-panel">
+        <div class="section-header">
+          <span class="eyebrow">This week’s rhythm</span>
+          <h2 class="section-title" style="font-size: clamp(1.45rem, 4vw, 2.1rem); max-width: none;">When the workflow actually moved.</h2>
+        </div>
+
+        <% max_rhythm = [@posting_rhythm.map(&:count).max.to_i, 1].max %>
+        <div class="rhythm-bars">
+          <% @posting_rhythm.each do |point| %>
+            <% fill_height = point.count.zero? ? 12 : [((point.count.to_f / max_rhythm) * 100).round, 18].max %>
+            <div class="rhythm-bar">
+              <span class="rhythm-bar__count"><%= point.count %></span>
+              <div class="rhythm-bar__track">
+                <div class="rhythm-bar__fill" style="height: <%= fill_height %>%;"></div>
+              </div>
+              <span class="rhythm-bar__label"><%= point.label %></span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="surface-panel surface-panel--soft">
+        <div class="section-header">
+          <span class="eyebrow">Queue before next prompt</span>
+          <h2 class="section-title" style="font-size: clamp(1.45rem, 4vw, 2.1rem); max-width: none;">What should be cleared first.</h2>
+        </div>
+
+        <% if @approval_queue.any? %>
+          <div class="timeline-list">
+            <% @approval_queue.each do |draft| %>
+              <%= link_to content_draft_path(draft), class: "list-card" do %>
+                <div class="list-card__meta">
+                  <span>Pending since <%= time_ago_in_words(draft.created_at) %> ago</span>
+                  <span class="<%= draft_status_badge_class(draft.status) %>"><%= draft.status.titleize %></span>
+                </div>
+                <h3 class="list-card__title"><%= truncate(draft.body, length: 120) %></h3>
+                <p class="section-copy">Clear this draft so Ayla can focus on the next real moment instead of stacking backlog.</p>
+              <% end %>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="empty-card">
+            <h3 class="list-card__title">Queue is clear.</h3>
+            <p>No approvals are blocking the next reminder or capture request.</p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </section>
+</div>

@@ -1,6 +1,6 @@
 class ApplicationController < ActionController::Base
   before_action :configure_permitted_parameters, if: :devise_controller?
-  helper_method :telegram_bot_username
+  helper_method :telegram_bot_username, :telegram_connect_url_for
 
   protected
 
@@ -11,7 +11,7 @@ class ApplicationController < ActionController::Base
 
   def after_sign_in_path_for(resource)
     if resource.onboarded?
-      dashboard_path
+      overview_path
     else
       onboarding_path
     end

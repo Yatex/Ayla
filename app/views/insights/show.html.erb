@@ -1,0 +1,122 @@
+<div class="page-shell">
+  <section class="page-hero">
+    <div class="surface-panel page-hero__content">
+      <span class="eyebrow">Insights</span>
+      <h1 class="page-title">A clearer read on how your content system is performing.</h1>
+      <p class="section-copy section-copy--lead">
+        Enough structure to see whether Ayla is helping you stay visible: queue health, weekly rhythm, approval rate, and where momentum is getting lost.
+      </p>
+    </div>
+
+    <div class="surface-panel surface-panel--soft page-hero__aside">
+      <span class="eyebrow">Last activity</span>
+      <p class="section-copy">
+        <strong><%= @last_activity_at ? "#{time_ago_in_words(@last_activity_at)} ago" : "No activity yet" %></strong>
+        <%= @last_activity_at ? " since the most recent draft entered your workflow." : " Capture a real moment to start generating signal." %>
+      </p>
+    </div>
+  </section>
+
+  <section class="metrics-grid">
+    <article class="metric-card">
+      <span class="metric-card__label">Total drafts</span>
+      <h2 class="metric-card__value"><%= @workspace_snapshot.total_count %></h2>
+      <p class="metric-card__hint">All drafts produced from your real-life moments so far.</p>
+    </article>
+
+    <article class="metric-card">
+      <span class="metric-card__label">Approved</span>
+      <h2 class="metric-card__value"><%= @approved_count %></h2>
+      <p class="metric-card__hint">Pieces that made it through your review process.</p>
+    </article>
+
+    <article class="metric-card">
+      <span class="metric-card__label">Approval rate</span>
+      <h2 class="metric-card__value"><%= @approval_rate %>%</h2>
+      <p class="metric-card__hint">A proxy for whether Ayla is staying close to your voice.</p>
+    </article>
+
+    <article class="metric-card">
+      <span class="metric-card__label">This week</span>
+      <h2 class="metric-card__value"><%= @drafts_this_week %></h2>
+      <p class="metric-card__hint">Current weekly volume across captured moments and generated drafts.</p>
+    </article>
+  </section>
+
+  <section class="dashboard-layout">
+    <div class="surface-panel">
+      <div class="section-header">
+        <span class="eyebrow">Status breakdown</span>
+        <h2 class="section-title" style="font-size: clamp(1.55rem, 4vw, 2.25rem); max-width: none;">Where drafts are sitting right now.</h2>
+      </div>
+
+      <div class="task-list">
+        <% @status_breakdown.each do |item| %>
+          <div class="task-card task-card--muted">
+            <div class="task-card__header">
+              <span class="task-card__due"><%= item[:label] %></span>
+            </div>
+            <h3><%= item[:count] %></h3>
+            <p><%= item[:label] == "Pending" ? "Waiting for approval before Ayla can move on." : "Current count in this workflow state." %></p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="stack">
+      <div class="surface-panel surface-panel--accent">
+        <div class="section-header">
+          <span class="eyebrow">Posting rhythm</span>
+          <h2 class="section-title" style="font-size: clamp(1.45rem, 4vw, 2.1rem); max-width: none;">The last 7 days of movement.</h2>
+        </div>
+
+        <% max_rhythm = [@posting_rhythm.map(&:count).max.to_i, 1].max %>
+        <div class="rhythm-bars">
+          <% @posting_rhythm.each do |point| %>
+            <% fill_height = point.count.zero? ? 12 : [((point.count.to_f / max_rhythm) * 100).round, 18].max %>
+            <div class="rhythm-bar">
+              <span class="rhythm-bar__count"><%= point.count %></span>
+              <div class="rhythm-bar__track">
+                <div class="rhythm-bar__fill" style="height: <%= fill_height %>%;"></div>
+              </div>
+              <span class="rhythm-bar__label"><%= point.label %></span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="surface-panel surface-panel--soft">
+        <div class="section-header">
+          <span class="eyebrow">Interpretation</span>
+          <h2 class="section-title" style="font-size: clamp(1.45rem, 4vw, 2.1rem); max-width: none;">What the numbers are saying.</h2>
+        </div>
+
+        <div class="task-list">
+          <div class="task-card task-card--muted">
+            <div class="task-card__header">
+              <span class="task-card__due">Queue</span>
+            </div>
+            <h3><%= @pending_count.zero? ? "Clear" : "Needs review" %></h3>
+            <p><%= @pending_count.zero? ? "No backlog is slowing down the next capture cycle." : "#{@pending_count} drafts are waiting on approval." %></p>
+          </div>
+
+          <div class="task-card task-card--success">
+            <div class="task-card__header">
+              <span class="task-card__due">Rhythm</span>
+            </div>
+            <h3><%= @drafts_this_week.positive? ? "Active" : "Cold" %></h3>
+            <p><%= @drafts_this_week.positive? ? "You have generated new drafts this week, which means the system is alive." : "No fresh drafts in the last 7 days. Time to capture something real." %></p>
+          </div>
+
+          <div class="task-card task-card--accent">
+            <div class="task-card__header">
+              <span class="task-card__due">Quality signal</span>
+            </div>
+            <h3><%= @approval_rate %>% approval</h3>
+            <p>Use this as a proxy for whether Ayla is staying close to your voice and your standards.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

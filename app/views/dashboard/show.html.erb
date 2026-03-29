@@ -1,42 +1,43 @@
 <div class="page-shell">
   <section class="page-hero">
-    <div class="surface-panel surface-panel--accent page-hero__content rise-in">
-      <span class="eyebrow">Presence dashboard</span>
-      <h1 class="page-title">Stay consistent without turning content into another job.</h1>
+    <div class="surface-panel page-hero__content">
+      <span class="eyebrow">Overview</span>
+      <h1 class="page-title">Content operations, not another hero banner.</h1>
       <p class="section-copy section-copy--lead">
-        Ayla keeps your presence tied to real work, real moments, and real follow-through. Less pressure. More continuity.
+        See what needs attention now: queue, connection state, next actions, and whether your posting rhythm is actually holding.
       </p>
     </div>
 
-    <div class="surface-panel page-hero__aside rise-in" style="animation-delay: 100ms;">
-      <span class="eyebrow">Current rhythm</span>
-      <p class="section-copy">
-        <strong><%= @telegram_connected ? "Telegram is linked." : "Telegram is still disconnected." %></strong>
-        <%= @telegram_connected ? "Ayla can already nudge you, collect context, and move moments into drafts." : "Link it to start the chat-based workflow that keeps your content moving." %>
-      </p>
-      <% unless current_user.onboarded? %>
-        <%= link_to "Finish onboarding", onboarding_path, class: "button-secondary" %>
-      <% end %>
+    <div class="surface-panel surface-panel--soft page-hero__aside">
+      <span class="eyebrow">Current status</span>
+      <h2 class="section-title" style="font-size: clamp(1.6rem, 4vw, 2.4rem); max-width: none;"><%= @workspace_status[:label] %></h2>
+      <p class="section-copy"><%= @workspace_status[:detail] %></p>
     </div>
   </section>
 
-  <section class="metrics-grid rise-in" style="animation-delay: 160ms;">
+  <section class="metrics-grid">
     <article class="metric-card">
-      <span class="metric-card__label">Pending approval</span>
+      <span class="metric-card__label">Pending drafts</span>
       <h2 class="metric-card__value"><%= @pending_count %></h2>
-      <p class="metric-card__hint">Drafts waiting for your yes before they become part of your public rhythm.</p>
+      <p class="metric-card__hint">Drafts currently waiting for your approval.</p>
     </article>
 
     <article class="metric-card">
-      <span class="metric-card__label">Approved</span>
-      <h2 class="metric-card__value"><%= @approved_count %></h2>
-      <p class="metric-card__hint">Pieces already shaped from real moments you decided were worth sharing.</p>
+      <span class="metric-card__label">Approval rate</span>
+      <h2 class="metric-card__value"><%= @approval_rate %>%</h2>
+      <p class="metric-card__hint">Approved versus rejected across reviewed drafts.</p>
     </article>
 
     <article class="metric-card">
       <span class="metric-card__label">Telegram</span>
       <h2 class="metric-card__value"><%= @telegram_connected ? "Live" : "Offline" %></h2>
-      <p class="metric-card__hint"><%= @telegram_connected ? "Ayla can follow up, ask for context, and keep your cadence warm." : "Connect Telegram to let Ayla prompt you when moments are fresh." %></p>
+      <p class="metric-card__hint"><%= @telegram_connected ? "Ayla can prompt and collect moments in chat." : "Link Telegram to activate the assistant workflow." %></p>
+    </article>
+
+    <article class="metric-card">
+      <span class="metric-card__label">Drafts this week</span>
+      <h2 class="metric-card__value"><%= @drafts_this_week %></h2>
+      <p class="metric-card__hint">A simple signal for whether the publishing rhythm is warm or fading.</p>
     </article>
   </section>
 
@@ -44,70 +45,115 @@
     <div class="stack">
       <div class="surface-panel">
         <div class="section-header">
-          <span class="eyebrow">Recent drafts</span>
-          <div class="flex items-end justify-between gap-4 flex-wrap">
-            <h2 class="section-title" style="font-size: clamp(1.6rem, 4vw, 2.4rem); max-width: none;">Captured moments, turned into something usable.</h2>
-            <%= link_to "View all drafts", content_drafts_path, class: "button-ghost button-ghost--sm" %>
-          </div>
+          <span class="eyebrow">Approval queue</span>
+          <h2 class="section-title" style="font-size: clamp(1.55rem, 4vw, 2.25rem); max-width: none;">What needs your decision now.</h2>
         </div>
 
-        <% if @recent_drafts.any? %>
+        <% if @approval_queue.any? %>
           <div class="timeline-list">
-            <% @recent_drafts.each do |draft| %>
+            <% @approval_queue.each do |draft| %>
               <%= link_to content_draft_path(draft), class: "list-card" do %>
                 <div class="list-card__meta">
-                  <span><%= time_ago_in_words(draft.created_at) %> ago</span>
+                  <span>Waiting since <%= time_ago_in_words(draft.created_at) %> ago</span>
                   <span class="<%= draft_status_badge_class(draft.status) %>"><%= draft.status.titleize %></span>
                 </div>
-                <h3 class="list-card__title"><%= truncate(draft.body, length: 140) %></h3>
-                <p class="section-copy">Built from moments you already lived, not from a blank prompt.</p>
+                <h3 class="list-card__title"><%= truncate(draft.body, length: 150) %></h3>
+                <p class="section-copy">Review it now to keep the queue moving and the workflow clean.</p>
               <% end %>
             <% end %>
           </div>
         <% else %>
           <div class="empty-card">
-            <h3 class="list-card__title">No drafts yet.</h3>
-            <p>Start a Telegram conversation with Ayla and let one real moment become your first approved draft.</p>
+            <h3 class="list-card__title">Approval queue is clear.</h3>
+            <p>You have room to capture something fresh without any backlog slowing Ayla down.</p>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="surface-panel">
+        <div class="section-header">
+          <span class="eyebrow">Recent activity</span>
+          <h2 class="section-title" style="font-size: clamp(1.55rem, 4vw, 2.25rem); max-width: none;">Latest movement in your workflow.</h2>
+        </div>
+
+        <% if @recent_activity.any? %>
+          <div class="timeline-list">
+            <% @recent_activity.each do |draft| %>
+              <%= link_to content_draft_path(draft), class: "list-card" do %>
+                <div class="list-card__meta">
+                  <span><%= draft.created_at.strftime("%b %d · %l:%M %p") %></span>
+                  <span class="<%= draft_status_badge_class(draft.status) %>"><%= draft.status.titleize %></span>
+                </div>
+                <h3 class="list-card__title"><%= truncate(draft.body, length: 130) %></h3>
+                <p class="section-copy">Ayla turned a real moment into this draft and moved it into your working system.</p>
+              <% end %>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="empty-card">
+            <h3 class="list-card__title">No recent activity yet.</h3>
+            <p>Connect Telegram, capture a real moment, and let Ayla start building your operational queue.</p>
           </div>
         <% end %>
       </div>
     </div>
 
     <div class="stack">
-      <% unless @telegram_connected %>
-        <div class="surface-panel surface-panel--accent">
-          <span class="eyebrow">Connect the assistant</span>
-          <h2 class="section-title" style="font-size: clamp(1.5rem, 4vw, 2.2rem); max-width: none;">Ayla works best when it can catch you in the moment.</h2>
-          <p class="section-copy">
-            <%= @telegram_connect_url.present? ? "Open @#{@telegram_bot_username} and tap Start. From there Ayla can remind you, ask for the clip or context, and keep your weekly presence from slipping." : "Set TELEGRAM_BOT_USERNAME so the one-tap Telegram connect flow can appear here." %>
-          </p>
-          <% if @telegram_connect_url.present? %>
-            <%= link_to "Connect Telegram", @telegram_connect_url, target: "_blank", rel: "noopener", class: "button-primary" %>
+      <div class="surface-panel surface-panel--accent">
+        <div class="section-header">
+          <span class="eyebrow">Upcoming reminders</span>
+          <h2 class="section-title" style="font-size: clamp(1.45rem, 4vw, 2.1rem); max-width: none;">The next actions keeping you visible.</h2>
+        </div>
+
+        <div class="task-list">
+          <% @upcoming_tasks.each do |task| %>
+            <% task_path = workspace_task_path(task, telegram_connect_url: @telegram_connect_url) %>
+            <% external = workspace_task_external?(task, telegram_connect_url: @telegram_connect_url) %>
+            <%= link_to task_path,
+                class: workspace_task_classes(task),
+                target: (external ? "_blank" : nil),
+                rel: (external ? "noopener" : nil) do %>
+              <div class="task-card__header">
+                <span class="task-card__due"><%= task.due_label %></span>
+              </div>
+              <h3><%= task.title %></h3>
+              <p><%= task.detail %></p>
+            <% end %>
           <% end %>
         </div>
-      <% end %>
+      </div>
+
+      <div class="surface-panel">
+        <div class="section-header">
+          <span class="eyebrow">Posting rhythm</span>
+          <h2 class="section-title" style="font-size: clamp(1.45rem, 4vw, 2.1rem); max-width: none;">How the last 7 days actually looked.</h2>
+          <p class="section-copy">Not vanity metrics. Just whether the system stayed warm.</p>
+        </div>
+
+        <% max_rhythm = [@posting_rhythm.map(&:count).max.to_i, 1].max %>
+        <div class="rhythm-bars">
+          <% @posting_rhythm.each do |point| %>
+            <% fill_height = point.count.zero? ? 12 : [((point.count.to_f / max_rhythm) * 100).round, 18].max %>
+            <div class="rhythm-bar">
+              <span class="rhythm-bar__count"><%= point.count %></span>
+              <div class="rhythm-bar__track">
+                <div class="rhythm-bar__fill" style="height: <%= fill_height %>%;"></div>
+              </div>
+              <span class="rhythm-bar__label"><%= point.label %></span>
+            </div>
+          <% end %>
+        </div>
+      </div>
 
       <div class="surface-panel surface-panel--soft">
-        <span class="eyebrow">The Ayla loop</span>
-        <div class="stack">
-          <div class="mini-panel">
-            <span class="mini-panel__label">1. Prompt</span>
-            <strong class="mini-panel__title">Ayla notices it is time.</strong>
-            <p>It nudges you before a launch, after a client win, or when your posting rhythm starts to drift.</p>
-          </div>
-
-          <div class="mini-panel">
-            <span class="mini-panel__label">2. Capture</span>
-            <strong class="mini-panel__title">You send the real material.</strong>
-            <p>A screenshot, a photo, a video, a voice note, or quick context from what actually happened.</p>
-          </div>
-
-          <div class="mini-panel">
-            <span class="mini-panel__label">3. Draft</span>
-            <strong class="mini-panel__title">Ayla turns it into presence.</strong>
-            <p>It organizes the moment, asks what is missing, and gives you drafts that still sound like you.</p>
-          </div>
-        </div>
+        <span class="eyebrow">Telegram</span>
+        <h2 class="section-title" style="font-size: clamp(1.45rem, 4vw, 2.1rem); max-width: none;"><%= @telegram_connected ? "Assistant connected" : "Assistant waiting to be linked" %></h2>
+        <p class="section-copy">
+          <%= @telegram_connected ? "Ayla can already ask for context, request the clip or screenshot, and keep your workflow alive from chat." : "Link Telegram to move prompts, reminders, and capture requests out of your browser and into the place you already check." %>
+        </p>
+        <% unless @telegram_connected %>
+          <%= link_to "Link Telegram", @telegram_connect_url, target: "_blank", rel: "noopener", class: "button-primary" if @telegram_connect_url.present? %>
+        <% end %>
       </div>
     </div>
   </section>

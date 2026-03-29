@@ -11,7 +11,10 @@ Rails.application.routes.draw do
   mount Sidekiq::Web => "/sidekiq"
 
   # Authenticated app routes
-  get "dashboard", to: "dashboard#show"
+  get "overview", to: "dashboard#show"
+  get "dashboard", to: redirect("/overview")
+  get "calendar", to: "calendar#show"
+  get "insights", to: "insights#show"
   resource :onboarding, only: [:show, :update], controller: "onboarding"
   resource :settings, only: [:show, :update], controller: "settings"
   resources :content_drafts, only: [:index, :show]

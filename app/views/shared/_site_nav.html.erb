@@ -1,7 +1,7 @@
 <header class="site-nav">
   <div class="shell shell--wide">
     <div class="site-nav__inner">
-      <%= link_to(ayla_signed_in? ? dashboard_path : root_path, { class: "brand-mark" }) do %>
+      <%= link_to(ayla_signed_in? ? overview_path : root_path, { class: "brand-mark" }) do %>
         <span class="brand-mark__signal"></span>
         <span>
           <span class="brand-mark__title">AYLA</span>
@@ -10,24 +10,39 @@
       <% end %>
 
       <% if ayla_signed_in? %>
+        <% telegram_menu_url = telegram_connect_url_for(current_user) %>
+        <% telegram_menu_path = current_user.telegram_connected? ? settings_path(anchor: "telegram") : (telegram_menu_url.presence || settings_path(anchor: "telegram")) %>
+        <% telegram_menu_external = !current_user.telegram_connected? && telegram_menu_url.present? %>
+
         <nav class="site-nav__links">
-          <%= link_to "Overview", dashboard_path, class: nav_link_classes(dashboard_path) %>
+          <%= link_to "Overview", overview_path, class: nav_link_classes(overview_path, starts_with: "/overview") %>
           <%= link_to "Drafts", content_drafts_path, class: nav_link_classes(content_drafts_path, starts_with: "/content_drafts") %>
-          <%= link_to "Settings", settings_path, class: nav_link_classes(settings_path, starts_with: "/settings") %>
+          <%= link_to "Calendar", calendar_path, class: nav_link_classes(calendar_path, starts_with: "/calendar") %>
+          <%= link_to "Insights", insights_path, class: nav_link_classes(insights_path, starts_with: "/insights") %>
         </nav>
 
         <div class="site-nav__actions">
-          <div class="nav-presence">
-            <span class="nav-presence__dot <%= current_user.telegram_connected? ? 'nav-presence__dot--live' : '' %>"></span>
-            <div>
-              <strong><%= current_user.name %></strong>
-              <span><%= current_user.telegram_connected? ? "Telegram linked" : "Link Telegram to begin" %></span>
-            </div>
-          </div>
+          <details class="user-menu">
+            <summary class="user-menu__summary">
+              <span class="nav-presence__dot <%= current_user.telegram_connected? ? 'nav-presence__dot--live' : '' %>"></span>
+              <span class="user-menu__identity">
+                <strong><%= current_user.name %></strong>
+                <span><%= current_user.telegram_connected? ? "Telegram linked" : "Assistant needs linking" %></span>
+              </span>
+              <span class="user-menu__chevron">▾</span>
+            </summary>
 
-          <%= link_to "Sign out", destroy_user_session_path,
-              data: { turbo_method: :delete },
-              class: "button-ghost button-ghost--sm" %>
+            <div class="user-menu__panel">
+              <%= link_to "Settings", settings_path, class: "user-menu__item" %>
+              <%= link_to "Link Telegram", telegram_menu_path,
+                  class: "user-menu__item",
+                  target: (telegram_menu_external ? "_blank" : nil),
+                  rel: (telegram_menu_external ? "noopener" : nil) %>
+              <%= link_to "Sign out", destroy_user_session_path,
+                  data: { turbo_method: :delete },
+                  class: "user-menu__item user-menu__item--danger" %>
+            </div>
+          </details>
         </div>
       <% else %>
         <nav class="site-nav__links">

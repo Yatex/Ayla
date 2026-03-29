@@ -22,7 +22,7 @@ class OnboardingController < ApplicationController
       @profile.update!(onboarding_step: "telegram_connect")
     when "telegram_connect"
       @profile.complete_onboarding!
-      redirect_to dashboard_path, notice: "You're all set!" and return
+      redirect_to overview_path, notice: "You're all set!" and return
     end
 
     redirect_to onboarding_path
@@ -31,7 +31,7 @@ class OnboardingController < ApplicationController
   private
 
   def redirect_if_onboarded
-    redirect_to dashboard_path if current_user.onboarded?
+    redirect_to overview_path if current_user.onboarded?
   end
 
   def profile_params
