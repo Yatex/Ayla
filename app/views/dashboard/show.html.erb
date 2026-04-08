@@ -1,52 +1,106 @@
 <div class="page-shell">
-  <section class="page-hero">
-    <div class="surface-panel page-hero__content">
-      <span class="eyebrow">Overview</span>
-      <h1 class="page-title">Content operations, not another hero banner.</h1>
-      <p class="section-copy section-copy--lead">
-        See what needs attention now: queue, connection state, next actions, and whether your posting rhythm is actually holding.
-      </p>
-    </div>
-
-    <div class="surface-panel surface-panel--soft page-hero__aside">
-      <span class="eyebrow">Current status</span>
-      <h2 class="section-title" style="font-size: clamp(1.6rem, 4vw, 2.4rem); max-width: none;"><%= @workspace_status[:label] %></h2>
-      <p class="section-copy"><%= @workspace_status[:detail] %></p>
-    </div>
-  </section>
-
   <section class="metrics-grid">
     <article class="metric-card">
-      <span class="metric-card__label">Pending drafts</span>
+      <span class="metric-card__label">Strategy readiness</span>
+      <h2 class="metric-card__value"><%= @strategy_completion[:percent] %>%</h2>
+      <p class="metric-card__hint"><%= @strategy_completion[:completed] %> of <%= @strategy_completion[:total] %> strategic building blocks are defined.</p>
+    </article>
+
+    <article class="metric-card">
+      <span class="metric-card__label">Current campaign</span>
+      <h2 class="metric-card__value"><%= @active_plan.present? ? @active_plan.title.truncate(18) : "None" %></h2>
+      <p class="metric-card__hint"><%= @active_plan.present? ? @active_plan.timeline_label : "Plan the next campaign phase." %></p>
+    </article>
+
+    <article class="metric-card">
+      <span class="metric-card__label">Pending approvals</span>
       <h2 class="metric-card__value"><%= @pending_count %></h2>
-      <p class="metric-card__hint">Drafts currently waiting for your approval.</p>
+      <p class="metric-card__hint">Items that still need your decision before they can move.</p>
     </article>
 
     <article class="metric-card">
-      <span class="metric-card__label">Approval rate</span>
-      <h2 class="metric-card__value"><%= @approval_rate %>%</h2>
-      <p class="metric-card__hint">Approved versus rejected across reviewed drafts.</p>
-    </article>
-
-    <article class="metric-card">
-      <span class="metric-card__label">Telegram</span>
-      <h2 class="metric-card__value"><%= @telegram_connected ? "Live" : "Offline" %></h2>
-      <p class="metric-card__hint"><%= @telegram_connected ? "Ayla can prompt and collect moments in chat." : "Link Telegram to activate the assistant workflow." %></p>
-    </article>
-
-    <article class="metric-card">
-      <span class="metric-card__label">Drafts this week</span>
-      <h2 class="metric-card__value"><%= @drafts_this_week %></h2>
-      <p class="metric-card__hint">A simple signal for whether the publishing rhythm is warm or fading.</p>
+      <span class="metric-card__label">Consistency</span>
+      <h2 class="metric-card__value"><%= @consistency_days %>/7</h2>
+      <p class="metric-card__hint">Days with content movement in the last week.</p>
     </article>
   </section>
 
   <section class="dashboard-layout">
     <div class="stack">
       <div class="surface-panel">
-        <div class="section-header">
-          <span class="eyebrow">Approval queue</span>
-          <h2 class="section-title" style="font-size: clamp(1.55rem, 4vw, 2.25rem); max-width: none;">What needs your decision now.</h2>
+        <div class="workflow-panel__header">
+          <div class="workflow-panel__heading">
+            <span class="eyebrow">Brand operating state</span>
+            <h2 class="section-title" style="font-size: clamp(1.45rem, 4vw, 2.05rem); max-width: none;">What matters now</h2>
+          </div>
+          <span class="<%= @workspace_status[:tone] == 'success' ? 'status-pill status-pill--approved' : (@workspace_status[:tone] == 'warning' ? 'status-pill status-pill--pending' : 'status-pill status-pill--draft') %>"><%= @workspace_status[:label] %></span>
+        </div>
+
+        <div class="mini-panel-grid">
+          <div class="mini-panel">
+            <span class="mini-panel__label">Active strategy</span>
+            <strong class="mini-panel__title"><%= @profile.positioning.presence || @profile.brand_summary.presence || "Define positioning" %></strong>
+            <p><%= @profile.target_audience.presence || "Audience is still missing." %></p>
+          </div>
+
+          <div class="mini-panel">
+            <span class="mini-panel__label">Current campaign</span>
+            <% if @active_plan.present? %>
+              <strong class="mini-panel__title"><%= @active_plan.title %></strong>
+              <p><%= @active_plan.objective.presence || @active_plan.message_angle.presence || "This phase still needs a sharper objective." %></p>
+            <% else %>
+              <strong class="mini-panel__title">No active campaign</strong>
+              <p>Move one plan to active so the system has a live operating focus.</p>
+            <% end %>
+          </div>
+
+          <div class="mini-panel">
+            <span class="mini-panel__label">Assistant channel</span>
+            <strong class="mini-panel__title"><%= assistant_channel_display_name(@assistant_channel) %></strong>
+            <p><%= @assistant_channel == "whatsapp" ? (@preference.whatsapp_number.presence || "Add the working number in Configuration.") : (@telegram_connected ? "Telegram is linked and capturing context." : "Telegram still needs linking.") %></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="surface-panel">
+        <div class="workflow-panel__header">
+          <div class="workflow-panel__heading">
+            <span class="eyebrow">Upcoming planned content</span>
+            <h2 class="section-title" style="font-size: clamp(1.45rem, 4vw, 2.05rem); max-width: none;">The next publishing window</h2>
+          </div>
+          <% if @active_plan.present? %>
+            <span class="<%= campaign_plan_status_badge_class(@active_plan.status) %>"><%= @active_plan.title %></span>
+          <% end %>
+        </div>
+
+        <% if @upcoming_content.any? %>
+          <div class="timeline-list">
+            <% @upcoming_content.each do |draft| %>
+              <% draft_platforms = calendar_draft_platforms(draft, preferred_platforms: @preferred_platforms) %>
+              <%= link_to content_draft_path(draft), class: "list-card" do %>
+                <div class="list-card__meta">
+                  <span><%= draft.created_at.strftime("%b %d · %l:%M %p") %></span>
+                  <span class="<%= draft_status_badge_class(draft.status) %>"><%= calendar_draft_status_label(draft) %></span>
+                </div>
+                <h3 class="list-card__title"><%= calendar_draft_title(draft) %></h3>
+                <p class="section-copy"><%= draft_platforms.any? ? draft_platforms.map { |platform| platform_display_name(platform) }.join(" · ") : "Platform still to be decided" %></p>
+              <% end %>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="empty-card">
+            <h3 class="list-card__title">No upcoming items scheduled.</h3>
+            <p>Open Calendar to shape the next week around the active plan.</p>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="surface-panel">
+        <div class="workflow-panel__header">
+          <div class="workflow-panel__heading">
+            <span class="eyebrow">Pending approvals</span>
+            <h2 class="section-title" style="font-size: clamp(1.45rem, 4vw, 2.05rem); max-width: none;">What still needs your call</h2>
+          </div>
         </div>
 
         <% if @approval_queue.any? %>
@@ -55,79 +109,66 @@
               <%= link_to content_draft_path(draft), class: "list-card" do %>
                 <div class="list-card__meta">
                   <span>Waiting since <%= time_ago_in_words(draft.created_at) %> ago</span>
-                  <span class="<%= draft_status_badge_class(draft.status) %>"><%= draft.status.titleize %></span>
+                  <span class="<%= draft_status_badge_class(draft.status) %>"><%= calendar_draft_status_label(draft) %></span>
                 </div>
                 <h3 class="list-card__title"><%= truncate(draft.body, length: 150) %></h3>
-                <p class="section-copy">Review it now to keep the queue moving and the workflow clean.</p>
+                <p class="section-copy">Keep approvals moving so the plan can keep flowing into the calendar.</p>
               <% end %>
             <% end %>
           </div>
         <% else %>
           <div class="empty-card">
             <h3 class="list-card__title">Approval queue is clear.</h3>
-            <p>You have room to capture something fresh without any backlog slowing Ayla down.</p>
-          </div>
-        <% end %>
-      </div>
-
-      <div class="surface-panel">
-        <div class="section-header">
-          <span class="eyebrow">Recent activity</span>
-          <h2 class="section-title" style="font-size: clamp(1.55rem, 4vw, 2.25rem); max-width: none;">Latest movement in your workflow.</h2>
-        </div>
-
-        <% if @recent_activity.any? %>
-          <div class="timeline-list">
-            <% @recent_activity.each do |draft| %>
-              <%= link_to content_draft_path(draft), class: "list-card" do %>
-                <div class="list-card__meta">
-                  <span><%= draft.created_at.strftime("%b %d · %l:%M %p") %></span>
-                  <span class="<%= draft_status_badge_class(draft.status) %>"><%= draft.status.titleize %></span>
-                </div>
-                <h3 class="list-card__title"><%= truncate(draft.body, length: 130) %></h3>
-                <p class="section-copy">Ayla turned a real moment into this draft and moved it into your working system.</p>
-              <% end %>
-            <% end %>
-          </div>
-        <% else %>
-          <div class="empty-card">
-            <h3 class="list-card__title">No recent activity yet.</h3>
-            <p>Connect Telegram, capture a real moment, and let Ayla start building your operational queue.</p>
+            <p>Ayla can keep working on the next campaign moves without backlog.</p>
           </div>
         <% end %>
       </div>
     </div>
 
     <div class="stack">
-      <div class="surface-panel surface-panel--accent">
-        <div class="section-header">
-          <span class="eyebrow">Upcoming reminders</span>
-          <h2 class="section-title" style="font-size: clamp(1.45rem, 4vw, 2.1rem); max-width: none;">The next actions keeping you visible.</h2>
+      <div class="surface-panel">
+        <div class="workflow-panel__header">
+          <div class="workflow-panel__heading">
+            <span class="eyebrow">Recent performance</span>
+            <h2 class="section-title" style="font-size: clamp(1.35rem, 4vw, 1.95rem); max-width: none;">Signal from the recent cycle</h2>
+          </div>
         </div>
 
-        <div class="task-list">
-          <% @upcoming_tasks.each do |task| %>
-            <% task_path = workspace_task_path(task, telegram_connect_url: @telegram_connect_url) %>
-            <% external = workspace_task_external?(task, telegram_connect_url: @telegram_connect_url) %>
-            <%= link_to task_path,
-                class: workspace_task_classes(task),
-                target: (external ? "_blank" : nil),
-                rel: (external ? "noopener" : nil) do %>
-              <div class="task-card__header">
-                <span class="task-card__due"><%= task.due_label %></span>
-              </div>
-              <h3><%= task.title %></h3>
-              <p><%= task.detail %></p>
-            <% end %>
-          <% end %>
+        <div class="mini-panel-grid">
+          <div class="mini-panel">
+            <span class="mini-panel__label">Approval rate</span>
+            <strong class="mini-panel__title"><%= @approval_rate %>%</strong>
+            <p>How often recent drafts matched the standard closely enough.</p>
+          </div>
+
+          <div class="mini-panel">
+            <span class="mini-panel__label">Drafts this week</span>
+            <strong class="mini-panel__title"><%= @drafts_this_week %></strong>
+            <p>Content volume generated in the last seven days.</p>
+          </div>
         </div>
+
+        <% if @recent_activity.any? %>
+          <div class="timeline-list">
+            <% @recent_activity.first(4).each do |draft| %>
+              <%= link_to content_draft_path(draft), class: "list-card" do %>
+                <div class="list-card__meta">
+                  <span><%= draft.created_at.strftime("%b %d · %l:%M %p") %></span>
+                  <span class="<%= draft_status_badge_class(draft.status) %>"><%= calendar_draft_status_label(draft) %></span>
+                </div>
+                <h3 class="list-card__title"><%= truncate(draft.body, length: 120) %></h3>
+              <% end %>
+            <% end %>
+          </div>
+        <% end %>
       </div>
 
       <div class="surface-panel">
-        <div class="section-header">
-          <span class="eyebrow">Posting rhythm</span>
-          <h2 class="section-title" style="font-size: clamp(1.45rem, 4vw, 2.1rem); max-width: none;">How the last 7 days actually looked.</h2>
-          <p class="section-copy">Not vanity metrics. Just whether the system stayed warm.</p>
+        <div class="workflow-panel__header">
+          <div class="workflow-panel__heading">
+            <span class="eyebrow">Weekly rhythm</span>
+            <h2 class="section-title" style="font-size: clamp(1.35rem, 4vw, 1.95rem); max-width: none;">Consistency across the last 7 days</h2>
+          </div>
         </div>
 
         <% max_rhythm = [@posting_rhythm.map(&:count).max.to_i, 1].max %>
@@ -146,13 +187,30 @@
       </div>
 
       <div class="surface-panel surface-panel--soft">
-        <span class="eyebrow">Telegram</span>
-        <h2 class="section-title" style="font-size: clamp(1.45rem, 4vw, 2.1rem); max-width: none;"><%= @telegram_connected ? "Assistant connected" : "Assistant waiting to be linked" %></h2>
-        <p class="section-copy">
-          <%= @telegram_connected ? "Ayla can already ask for context, request the clip or screenshot, and keep your workflow alive from chat." : "Link Telegram to move prompts, reminders, and capture requests out of your browser and into the place you already check." %>
-        </p>
-        <% unless @telegram_connected %>
-          <%= link_to "Link Telegram", @telegram_connect_url, target: "_blank", rel: "noopener", class: "button-primary" if @telegram_connect_url.present? %>
+        <div class="workflow-panel__header">
+          <div class="workflow-panel__heading">
+            <span class="eyebrow">Blockers</span>
+            <h2 class="section-title" style="font-size: clamp(1.35rem, 4vw, 1.95rem); max-width: none;">What still needs attention</h2>
+          </div>
+        </div>
+
+        <% if @setup_blockers.any? %>
+          <div class="timeline-list">
+            <% @setup_blockers.each do |blocker| %>
+              <%= link_to blocker[:path], class: "list-card" do %>
+                <div class="list-card__meta">
+                  <span class="status-pill status-pill--pending">Needs action</span>
+                </div>
+                <h3 class="list-card__title"><%= blocker[:label] %></h3>
+                <p class="section-copy"><%= blocker[:detail] %></p>
+              <% end %>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="empty-card">
+            <h3 class="list-card__title">Operating system ready.</h3>
+            <p>Strategy, planning, channels, and approvals are all in motion.</p>
+          </div>
         <% end %>
       </div>
     </div>

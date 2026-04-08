@@ -9,10 +9,11 @@
 
     <div class="site-footer__links">
       <% if ayla_signed_in? %>
-        <%= link_to "Overview", overview_path, class: "footer-link" %>
-        <%= link_to "Drafts", content_drafts_path, class: "footer-link" %>
+        <%= link_to "Dashboard", dashboard_path, class: "footer-link" %>
+        <%= link_to "Strategy", strategy_path, class: "footer-link" %>
+        <%= link_to "Planification", planification_path, class: "footer-link" %>
         <%= link_to "Calendar", calendar_path, class: "footer-link" %>
-        <%= link_to "Insights", insights_path, class: "footer-link" %>
+        <%= link_to "Configuration", settings_path, class: "footer-link" %>
       <% else %>
         <%= link_to "How it works", root_path(anchor: "how-it-works"), class: "footer-link" %>
         <%= link_to "Why it's different", root_path(anchor: "difference"), class: "footer-link" %>

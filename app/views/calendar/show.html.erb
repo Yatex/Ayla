@@ -1,93 +1,113 @@
-<div class="page-shell">
-  <section class="page-hero">
-    <div class="surface-panel page-hero__content">
-      <span class="eyebrow">Calendar</span>
-      <h1 class="page-title">Ayla’s operating calendar for the week ahead.</h1>
-      <p class="section-copy section-copy--lead">
-        Not a generic content calendar. A live list of the reminders, follow-ups, and queue-clearing moves that keep your presence active.
-      </p>
-    </div>
+<div class="page-shell page-shell--calendar">
+  <section class="surface-panel calendar-shell">
+    <div class="calendar-toolbar">
+      <div class="calendar-toolbar__nav">
+        <div class="calendar-week-switcher">
+          <%= link_to "‹", calendar_path(week_offset: @week_offset - 1, platform: (@selected_platform unless @selected_platform == "all")), class: "calendar-nav-button" %>
 
-    <div class="surface-panel surface-panel--soft page-hero__aside">
-      <span class="eyebrow">Calendar state</span>
-      <p class="section-copy">
-        <strong><%= @upcoming_tasks.count %> active tasks.</strong>
-        <%= current_user.telegram_connected? ? "Ayla can handle the next prompt directly in Telegram." : "Link Telegram to turn these tasks into real-time chat prompts." %>
-      </p>
-    </div>
-  </section>
+          <div>
+            <span class="eyebrow">Calendar</span>
+            <h1 class="section-title" style="font-size: clamp(1.7rem, 4vw, 2.5rem); max-width: none;"><%= @week_range_label %></h1>
+          </div>
 
-  <section class="dashboard-layout">
-    <div class="surface-panel surface-panel--accent">
-      <div class="section-header">
-        <span class="eyebrow">Upcoming tasks</span>
-        <h2 class="section-title" style="font-size: clamp(1.55rem, 4vw, 2.25rem); max-width: none;">What Ayla wants you to do next.</h2>
+          <%= link_to "›", calendar_path(week_offset: @week_offset + 1, platform: (@selected_platform unless @selected_platform == "all")), class: "calendar-nav-button" %>
+        </div>
       </div>
 
-      <div class="task-list">
-        <% @upcoming_tasks.each do |task| %>
-          <% task_path = workspace_task_path(task, telegram_connect_url: @telegram_connect_url) %>
-          <% external = workspace_task_external?(task, telegram_connect_url: @telegram_connect_url) %>
-          <%= link_to task_path,
-              class: workspace_task_classes(task),
-              target: (external ? "_blank" : nil),
-              rel: (external ? "noopener" : nil) do %>
-            <div class="task-card__header">
-              <span class="task-card__due"><%= task.due_label %></span>
-            </div>
-            <h3><%= task.title %></h3>
-            <p><%= task.detail %></p>
+      <div class="calendar-toolbar__actions">
+        <div class="calendar-filter-group">
+          <% @available_platform_filters.each do |platform| %>
+            <% active = @selected_platform == platform %>
+            <% path = platform == "all" ? calendar_path(week_offset: @week_offset) : calendar_path(week_offset: @week_offset, platform: platform) %>
+            <%= link_to path, class: "calendar-filter #{'calendar-filter--active' if active}" do %>
+              <%= platform == "all" ? "All platforms" : platform_display_name(platform) %>
+            <% end %>
           <% end %>
+        </div>
+
+        <div class="dashboard-inline-actions">
+          <%= link_to "Open planification", planification_path, class: "button-ghost button-ghost--sm" %>
+          <%= link_to "Settings", settings_path(anchor: "platforms"), class: "button-primary button-primary--sm" %>
+        </div>
+      </div>
+    </div>
+
+    <div class="calendar-context-grid">
+      <div class="mini-panel">
+        <span class="mini-panel__label">Guided by</span>
+        <% if @active_plan.present? %>
+          <strong class="mini-panel__title"><%= @active_plan.title %></strong>
+          <p><%= @active_plan.objective.presence || @active_plan.message_angle.presence || "Refine the campaign goal in Planification." %></p>
+        <% else %>
+          <strong class="mini-panel__title">No active campaign</strong>
+          <p>Create or activate a plan so the weekly board follows a larger system.</p>
+        <% end %>
+      </div>
+
+      <div class="mini-panel">
+        <span class="mini-panel__label">This week</span>
+        <strong class="mini-panel__title"><%= pluralize(@week_post_count, "post") %></strong>
+        <p><%= @week_pending_count %> pending review and <%= @week_approved_count %> already approved for publishing flow.</p>
+      </div>
+
+      <div class="mini-panel">
+        <span class="mini-panel__label">Next phase</span>
+        <% if @next_plan.present? %>
+          <strong class="mini-panel__title"><%= @next_plan.title %></strong>
+          <p>Starts <%= @next_plan.start_on.strftime("%b %-d") %>. Keep the board warm for the transition.</p>
+        <% else %>
+          <strong class="mini-panel__title">Nothing queued</strong>
+          <p>Use Planification to sequence the next campaign after this one.</p>
         <% end %>
       </div>
     </div>
 
-    <div class="stack">
-      <div class="surface-panel">
-        <div class="section-header">
-          <span class="eyebrow">This week’s rhythm</span>
-          <h2 class="section-title" style="font-size: clamp(1.45rem, 4vw, 2.1rem); max-width: none;">When the workflow actually moved.</h2>
-        </div>
-
-        <% max_rhythm = [@posting_rhythm.map(&:count).max.to_i, 1].max %>
-        <div class="rhythm-bars">
-          <% @posting_rhythm.each do |point| %>
-            <% fill_height = point.count.zero? ? 12 : [((point.count.to_f / max_rhythm) * 100).round, 18].max %>
-            <div class="rhythm-bar">
-              <span class="rhythm-bar__count"><%= point.count %></span>
-              <div class="rhythm-bar__track">
-                <div class="rhythm-bar__fill" style="height: <%= fill_height %>%;"></div>
-              </div>
-              <span class="rhythm-bar__label"><%= point.label %></span>
-            </div>
-          <% end %>
-        </div>
-      </div>
-
-      <div class="surface-panel surface-panel--soft">
-        <div class="section-header">
-          <span class="eyebrow">Queue before next prompt</span>
-          <h2 class="section-title" style="font-size: clamp(1.45rem, 4vw, 2.1rem); max-width: none;">What should be cleared first.</h2>
-        </div>
-
-        <% if @approval_queue.any? %>
-          <div class="timeline-list">
-            <% @approval_queue.each do |draft| %>
-              <%= link_to content_draft_path(draft), class: "list-card" do %>
-                <div class="list-card__meta">
-                  <span>Pending since <%= time_ago_in_words(draft.created_at) %> ago</span>
-                  <span class="<%= draft_status_badge_class(draft.status) %>"><%= draft.status.titleize %></span>
+    <div class="calendar-board-wrap">
+      <div class="calendar-board">
+        <% @calendar_days.each do |day| %>
+          <section class="calendar-column <%= 'calendar-column--today' if day.date == Time.zone.today %>">
+            <header class="calendar-column__header">
+              <div class="calendar-column__date">
+                <span class="calendar-column__day-number"><%= day.date.day %></span>
+                <div>
+                  <strong><%= day.label.upcase %></strong>
+                  <p><%= pluralize(day.drafts.count, "post") %></p>
                 </div>
-                <h3 class="list-card__title"><%= truncate(draft.body, length: 120) %></h3>
-                <p class="section-copy">Clear this draft so Ayla can focus on the next real moment instead of stacking backlog.</p>
+              </div>
+            </header>
+
+            <div class="calendar-column__cards">
+              <% if day.drafts.any? %>
+                <% day.drafts.each do |draft| %>
+                  <% draft_platforms = calendar_draft_platforms(draft, preferred_platforms: @preferred_platforms) %>
+                  <%= link_to content_draft_path(draft), class: calendar_draft_card_class(draft, preferred_platforms: @preferred_platforms) do %>
+                    <div class="calendar-post-card__meta">
+                      <span><%= draft.created_at.strftime("%l:%M %p").strip %></span>
+                      <span class="<%= draft_status_badge_class(draft.status) %>"><%= calendar_draft_status_label(draft) %></span>
+                    </div>
+
+                    <div class="calendar-post-card__platforms">
+                      <% if draft_platforms.any? %>
+                        <% draft_platforms.each do |platform| %>
+                          <span class="<%= platform_badge_class(platform) %>"><%= platform_short_name(platform) %></span>
+                        <% end %>
+                      <% else %>
+                        <span class="platform-badge platform-badge--neutral">TBD</span>
+                      <% end %>
+                    </div>
+
+                    <h3 class="calendar-post-card__title"><%= calendar_draft_title(draft) %></h3>
+                    <p class="calendar-post-card__excerpt"><%= calendar_draft_excerpt(draft) %></p>
+                  <% end %>
+                <% end %>
+              <% else %>
+                <div class="calendar-empty-slot">
+                  <span class="calendar-empty-slot__label">Open slot</span>
+                  <p><%= @active_plan.present? ? "Use this space for #{@active_plan.title.downcase}." : "No post planned yet." %></p>
+                </div>
               <% end %>
-            <% end %>
-          </div>
-        <% else %>
-          <div class="empty-card">
-            <h3 class="list-card__title">Queue is clear.</h3>
-            <p>No approvals are blocking the next reminder or capture request.</p>
-          </div>
+            </div>
+          </section>
         <% end %>
       </div>
     </div>

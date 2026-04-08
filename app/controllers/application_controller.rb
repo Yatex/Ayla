@@ -1,6 +1,7 @@
 class ApplicationController < ActionController::Base
   before_action :configure_permitted_parameters, if: :devise_controller?
-  helper_method :telegram_bot_username, :telegram_connect_url_for
+  around_action :use_user_timezone, if: :ayla_signed_in?
+  helper_method :telegram_bot_username, :telegram_connect_url_for, :ayla_signed_in?
 
   protected
 
@@ -11,7 +12,7 @@ class ApplicationController < ActionController::Base
 
   def after_sign_in_path_for(resource)
     if resource.onboarded?
-      overview_path
+      dashboard_path
     else
       onboarding_path
     end
@@ -27,5 +28,18 @@ class ApplicationController < ActionController::Base
 
   def telegram_bot_username
     Rails.application.config.telegram.bot_username
+  end
+
+  def ayla_signed_in?
+    user_signed_in?
+  rescue Devise::MissingWarden
+    false
+  end
+
+  def use_user_timezone(&block)
+    timezone = current_user&.user_profile&.timezone
+    return yield if timezone.blank?
+
+    Time.use_zone(timezone, &block)
   end
 end

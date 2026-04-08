@@ -1,6 +1,6 @@
 <div class="page-shell page-shell--narrow">
   <div class="stack">
-    <%= link_to "Back to drafts", content_drafts_path, class: "button-ghost button-ghost--sm", style: "width: fit-content;" %>
+    <%= link_to "Back to calendar", calendar_path, class: "button-ghost button-ghost--sm", style: "width: fit-content;" %>
 
     <section class="page-hero">
       <div class="surface-panel surface-panel--accent page-hero__content">
@@ -31,7 +31,74 @@
         <% if @draft.rejection_reason.present? %>
           <p>Reason: <%= @draft.rejection_reason %></p>
         <% end %>
+        <% if @draft.posted_at %>
+          <p>Published from Ayla: <%= @draft.posted_at.strftime("%b %d, %Y at %l:%M %p") %></p>
+        <% end %>
       </div>
+    </div>
+
+    <div class="surface-panel form-card">
+      <div class="form-card__header">
+        <span class="eyebrow">Publish</span>
+        <h2 class="section-title" style="font-size: clamp(1.45rem, 4vw, 2rem); max-width: none;">Push this draft live from here.</h2>
+      </div>
+
+      <%= form_with url: content_draft_path(@draft), method: :patch, class: "field-grid" do %>
+        <div class="field-stack">
+          <label class="field-label">Public media URL</label>
+          <%= text_field_tag "content_draft[media_url]", @draft.media_url, class: "field-input", placeholder: "Optional now. Needed for Instagram publishing." %>
+          <p class="field-hint">Keep this empty for X and LinkedIn. Add a public image URL if you want to publish to Instagram later.</p>
+        </div>
+
+        <%= submit_tag "Save draft details", class: "button-secondary button-secondary--full cursor-pointer" %>
+      <% end %>
+
+      <div class="section-divider"></div>
+
+      <% if @social_accounts.any? %>
+        <%= form_with url: publish_content_draft_path(@draft), method: :post, class: "field-grid" do %>
+          <div class="publish-account-grid">
+            <% @social_accounts.each do |account| %>
+              <% publishable = draft_publishable_to_account?(@draft, account) %>
+              <% published_post = published_post_for(@draft, account.provider) %>
+              <label class="channel-card-select">
+                <%= check_box_tag "providers[]", account.provider, false, class: "channel-card-select__input", disabled: !publishable %>
+
+                <div class="channel-card">
+                  <div class="channel-card__header">
+                    <span class="<%= platform_badge_class(account.provider) %>"><%= platform_short_name(account.provider) %></span>
+                    <% if published_post.present? %>
+                      <span class="status-pill status-pill--approved">Published</span>
+                    <% elsif publishable %>
+                      <span class="status-pill status-pill--draft">Ready</span>
+                    <% else %>
+                      <span class="status-pill status-pill--pending">Blocked</span>
+                    <% end %>
+                  </div>
+
+                  <div class="platform-card__copy">
+                    <strong><%= platform_display_name(account.provider) %></strong>
+                    <p><%= draft_publishability_copy(@draft, account) %></p>
+                    <% if published_post&.dig("url").present? %>
+                      <p><%= link_to "View published post", published_post["url"], target: "_blank", rel: "noopener", class: "text-link" %></p>
+                    <% elsif published_post&.dig("remote_id").present? %>
+                      <p class="field-hint">Remote ID: <%= published_post["remote_id"] %></p>
+                    <% end %>
+                  </div>
+                </div>
+              </label>
+            <% end %>
+          </div>
+
+          <%= submit_tag "Publish selected accounts", class: "button-primary button-primary--full cursor-pointer" %>
+        <% end %>
+      <% else %>
+        <div class="empty-card">
+          <h3 class="list-card__title">No social accounts linked yet.</h3>
+          <p>Connect X or LinkedIn in Configuration first, then come back here to publish directly from the draft.</p>
+          <%= link_to "Open configuration", settings_path(anchor: "platforms"), class: "button-primary button-primary--sm" %>
+        </div>
+      <% end %>
     </div>
   </div>
 </div>

@@ -8,11 +8,18 @@ module Drafts
     def call
       context = Conversations::Manager.new(conversation: @conversation).build_context
       preferences = @user.user_preference
+      profile = @user.user_profile
+      active_campaign = @user.campaign_plans.chronological.to_a.find(&:active_now?) || @user.campaign_plans.find_by(status: "active")
 
       prompt = Ai::PromptBuilder.call(
         context: context,
         tone: preferences&.tone || "professional",
-        custom_instructions: preferences&.custom_instructions
+        custom_instructions: preferences&.custom_instructions,
+        brand_context: profile&.strategy_context(preference: preferences),
+        content_topics: preferences&.normalized_content_types || [],
+        preferred_platforms: preferences&.normalized_preferred_platforms || [],
+        posting_frequency: preferences&.posting_frequency,
+        active_campaign: active_campaign&.message_angle.presence || active_campaign&.objective
       )
 
       response = Ai::Client.call(prompt: prompt)

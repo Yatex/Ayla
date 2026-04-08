@@ -1,6 +1,7 @@
 class WorkspaceSnapshot < ApplicationService
   Task = Struct.new(:kind, :title, :detail, :due_label, :tone, keyword_init: true)
   RhythmPoint = Struct.new(:label, :date, :count, keyword_init: true)
+  CalendarDay = Struct.new(:label, :date, :drafts, keyword_init: true)
 
   def initialize(user:)
     @user = user
@@ -11,7 +12,19 @@ class WorkspaceSnapshot < ApplicationService
   end
 
   def status
-    if !user.telegram_connected?
+    if preferred_platforms.blank?
+      {
+        label: "Channels still need setup",
+        detail: "Choose Instagram, LinkedIn, or X so Ayla knows where this content system is meant to publish.",
+        tone: "warning"
+      }
+    elsif assistant_channel == "whatsapp"
+      {
+        label: "WhatsApp selected",
+        detail: "WhatsApp is set as the preferred assistant channel. Direct connection is the next integration step.",
+        tone: "warning"
+      }
+    elsif !user.telegram_connected?
       {
         label: "Assistant not linked",
         detail: "Link Telegram so Ayla can catch real moments while they are fresh.",
@@ -155,6 +168,37 @@ class WorkspaceSnapshot < ApplicationService
     end
   end
 
+  def calendar_week(week_offset: 0, platform: nil)
+    start_date = calendar_week_start(week_offset: week_offset)
+    finish_date = start_date + 6.days
+    drafts = calendar_scope(platform: platform)
+      .where(created_at: start_date.beginning_of_day..finish_date.end_of_day)
+      .order(created_at: :asc)
+      .to_a
+      .group_by { |draft| draft.created_at.in_time_zone.to_date }
+
+    (0..6).map do |offset|
+      date = start_date + offset
+
+      CalendarDay.new(
+        label: date.strftime("%a"),
+        date: date,
+        drafts: drafts.fetch(date, [])
+      )
+    end
+  end
+
+  def calendar_week_label(week_offset: 0)
+    start_date = calendar_week_start(week_offset: week_offset)
+    finish_date = start_date + 6.days
+
+    if start_date.month == finish_date.month
+      "#{start_date.strftime('%b %-d')} - #{finish_date.strftime('%-d')}"
+    else
+      "#{start_date.strftime('%b %-d')} - #{finish_date.strftime('%b %-d')}"
+    end
+  end
+
   def status_breakdown
     [
       { label: "Draft", count: scoped_drafts.where(status: "draft").count, tone: "draft" },
@@ -167,6 +211,14 @@ class WorkspaceSnapshot < ApplicationService
   private
 
   attr_reader :user
+
+  def preferred_platforms
+    user.user_preference&.normalized_preferred_platforms || []
+  end
+
+  def assistant_channel
+    user.user_preference&.assistant_channel || "telegram"
+  end
 
   def scoped_drafts
     @scoped_drafts ||= user.content_drafts.recent
@@ -182,5 +234,16 @@ class WorkspaceSnapshot < ApplicationService
 
   def rejected_scope
     @rejected_scope ||= user.content_drafts.where(status: "rejected")
+  end
+
+  def calendar_scope(platform: nil)
+    scope = user.content_drafts
+    return scope if platform.blank?
+
+    scope.where("LOWER(platform) = ?", platform.downcase)
+  end
+
+  def calendar_week_start(week_offset:)
+    Time.zone.today.beginning_of_week(:monday) + week_offset.weeks
   end
 end

@@ -10,9 +10,28 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_03_28_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_04_02_101000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "campaign_plans", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "title", null: false
+    t.date "start_on", null: false
+    t.date "end_on", null: false
+    t.string "status", default: "draft", null: false
+    t.string "objective"
+    t.text "message_angle"
+    t.jsonb "focus_areas", default: [], null: false
+    t.text "expected_outcomes"
+    t.text "strategic_alignment"
+    t.text "learnings"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "start_on"], name: "index_campaign_plans_on_user_id_and_start_on"
+    t.index ["user_id", "status"], name: "index_campaign_plans_on_user_id_and_status"
+    t.index ["user_id"], name: "index_campaign_plans_on_user_id"
+  end
 
   create_table "content_drafts", force: :cascade do |t|
     t.bigint "user_id", null: false
@@ -58,6 +77,25 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_28_120000) do
     t.index ["conversation_id"], name: "index_messages_on_conversation_id"
   end
 
+  create_table "social_accounts", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "provider", null: false
+    t.string "external_uid", null: false
+    t.string "username"
+    t.text "access_token"
+    t.text "refresh_token"
+    t.datetime "expires_at"
+    t.boolean "active", default: true, null: false
+    t.datetime "connected_at"
+    t.datetime "last_synced_at"
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider", "external_uid"], name: "index_social_accounts_on_provider_and_external_uid", unique: true
+    t.index ["user_id", "provider"], name: "index_social_accounts_on_user_id_and_provider", unique: true
+    t.index ["user_id"], name: "index_social_accounts_on_user_id"
+  end
+
   create_table "telegram_connections", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "telegram_user_id", null: false
@@ -85,6 +123,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_28_120000) do
     t.text "custom_instructions"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "assistant_channel", default: "telegram", null: false
+    t.string "whatsapp_number"
     t.index ["user_id"], name: "index_user_preferences_on_user_id", unique: true
   end
 
@@ -97,6 +137,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_28_120000) do
     t.datetime "onboarded_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "brand_summary"
+    t.text "positioning"
+    t.text "target_audience"
+    t.text "strategic_objectives"
+    t.text "main_offers"
+    t.text "strategic_notes"
     t.index ["user_id"], name: "index_user_profiles_on_user_id", unique: true
   end
 
@@ -116,11 +162,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_28_120000) do
     t.index ["telegram_link_token"], name: "index_users_on_telegram_link_token", unique: true
   end
 
+  add_foreign_key "campaign_plans", "users"
   add_foreign_key "content_drafts", "conversations"
   add_foreign_key "content_drafts", "users"
   add_foreign_key "conversations", "telegram_connections"
   add_foreign_key "conversations", "users"
   add_foreign_key "messages", "conversations"
+  add_foreign_key "social_accounts", "users"
   add_foreign_key "telegram_connections", "users"
   add_foreign_key "user_preferences", "users"
   add_foreign_key "user_profiles", "users"

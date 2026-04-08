@@ -9,6 +9,8 @@ class User < ApplicationRecord
   has_one :telegram_connection, dependent: :destroy
   has_many :conversations, dependent: :destroy
   has_many :content_drafts, dependent: :destroy
+  has_many :social_accounts, dependent: :destroy
+  has_many :campaign_plans, dependent: :destroy
 
   validates :name, presence: true
 
@@ -20,6 +22,10 @@ class User < ApplicationRecord
 
   def telegram_connected?
     telegram_connection&.active?
+  end
+
+  def social_account_for(provider)
+    social_accounts.find_by(provider: provider)
   end
 
   def ensure_telegram_link_token!

@@ -1,130 +1,164 @@
 <div class="page-shell">
-  <section class="page-hero">
-    <div class="surface-panel surface-panel--accent page-hero__content">
-      <span class="eyebrow">Settings</span>
-      <h1 class="page-title">Shape how Ayla follows up, drafts, and supports your presence.</h1>
-      <p class="section-copy section-copy--lead">
-        These preferences help Ayla sound more like you, stay aligned with your rhythm, and keep the chat assistant useful instead of noisy.
-      </p>
+  <section class="settings-layout settings-layout--configuration">
+    <div class="surface-panel form-card settings-panel--span-full" id="platforms">
+      <div class="form-card__header">
+        <span class="eyebrow">Platforms</span>
+        <h1 class="section-title" style="font-size: clamp(1.5rem, 4vw, 2.2rem); max-width: none;">Choose and link the channels Ayla should manage.</h1>
+      </div>
+
+      <%= form_with url: settings_path, method: :patch, class: "field-grid", data: { autosave_form: true } do %>
+        <%= hidden_field_tag "user_preference[preferred_platforms][]", "" %>
+
+        <div class="platform-config-grid">
+          <% UserPreference::PLATFORMS.each do |platform| %>
+            <% account = @social_accounts_by_provider[platform] %>
+            <% selected = @preferred_platforms.include?(platform) %>
+            <% configured = social_provider_configured?(platform) %>
+            <% connected = account&.connected? %>
+            <% checkbox_id = "workspace-platform-#{platform}" %>
+            <% state_label = connected ? "Connected" : (configured ? "Available" : "Setup needed") %>
+            <% usage_copy =
+              if connected && selected
+                "Connected as #{account.display_handle}. Ayla will use this channel unless you turn it off."
+              elsif connected
+                "Connected as #{account.display_handle}. Turn this on whenever you want Ayla to use it."
+              elsif configured && selected
+                "Selected for the workspace. Connect the real account before publishing from Ayla."
+              elsif configured
+                "Available whenever you want to activate this channel."
+              else
+                "Add #{platform.upcase}_CLIENT_ID and #{platform.upcase}_CLIENT_SECRET to enable connection."
+              end %>
+
+            <div class="platform-config-card">
+              <%= check_box_tag "user_preference[preferred_platforms][]", platform, selected, id: checkbox_id, class: "platform-config-card__input" %>
+
+              <div class="platform-config-card__surface">
+                <label class="platform-config-card__select" for="<%= checkbox_id %>">
+                  <div class="platform-config-card__header">
+                    <span class="<%= platform_badge_class(platform) %>"><%= platform_short_name(platform) %></span>
+                    <span class="<%= social_account_status_tone(platform, account) %>"><%= state_label %></span>
+                  </div>
+
+                  <div class="platform-card__copy">
+                    <strong><%= platform_display_name(platform) %></strong>
+                    <p><%= platform_description(platform) %></p>
+                    <p class="platform-config-card__usage"><%= usage_copy %></p>
+                  </div>
+                </label>
+
+                <div class="platform-config-card__footer">
+                  <% unless social_provider_supports_text_only_posts?(platform) %>
+                    <p class="field-hint">Publishing to Instagram requires a public media URL on the draft.</p>
+                  <% end %>
+
+                  <div class="dashboard-inline-actions">
+                    <% if configured %>
+                      <%= link_to(connected ? "Reconnect" : "Connect account", connect_social_account_path(provider: platform), class: "button-primary button-primary--sm") %>
+                    <% end %>
+
+                    <% if connected %>
+                      <%= link_to "Disconnect", disconnect_social_account_path(provider: platform), data: { turbo_method: :delete }, class: "button-ghost button-ghost--sm" %>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+      <% end %>
     </div>
 
-    <div class="surface-panel page-hero__aside">
-      <span class="eyebrow">Assistant status</span>
-      <p class="section-copy">
-        <strong><%= @telegram&.active? ? "Telegram connected." : "Telegram not linked yet." %></strong>
-        <%= @telegram&.active? ? "Ayla can already prompt you and draft from your real moments." : "Link Telegram to activate the assistant workflow." %>
-      </p>
+    <div class="surface-panel surface-panel--soft form-card" id="assistant-channel">
+      <div class="form-card__header">
+        <span class="eyebrow">Assistant channel</span>
+        <h2 class="section-title" style="font-size: clamp(1.5rem, 4vw, 2.2rem); max-width: none;">Choose where Ayla should reach you.</h2>
+      </div>
+
+      <%= form_with url: settings_path, method: :patch, class: "field-grid", data: { assistant_channel_form: true, autosave_form: true } do %>
+        <div class="channel-option-grid">
+          <% UserPreference::ASSISTANT_CHANNELS.each do |channel| %>
+            <label class="channel-card-select">
+              <%= radio_button_tag "user_preference[assistant_channel]", channel, @assistant_channel == channel, class: "channel-card-select__input", data: { assistant_channel_radio: true, channel: channel } %>
+
+              <div class="channel-card">
+                <div class="channel-card__header">
+                  <span class="<%= assistant_channel_badge_class(channel) %>"><%= assistant_channel_short_name(channel) %></span>
+                  <span class="status-pill status-pill--approved <%= 'is-hidden' unless @assistant_channel == channel %>" data-assistant-channel-selected="<%= channel %>">Selected</span>
+                </div>
+
+                <div class="platform-card__copy">
+                  <strong><%= assistant_channel_display_name(channel) %></strong>
+                  <p><%= assistant_channel_description(channel) %></p>
+                </div>
+              </div>
+            </label>
+          <% end %>
+        </div>
+
+        <div class="<%= @assistant_channel == 'telegram' ? '' : 'is-hidden' %>" data-assistant-channel-panel="telegram">
+          <% if @telegram&.active? %>
+            <div class="mini-panel">
+              <span class="mini-panel__label">Linked account</span>
+              <strong class="mini-panel__title">@<%= @telegram.username || @telegram.first_name %></strong>
+              <p>Connected since <%= @telegram.connected_at&.strftime("%b %d, %Y") %>. Ayla can already prompt, collect, and draft from chat.</p>
+            </div>
+          <% elsif @telegram_connect_url.present? %>
+            <div class="field-grid">
+              <p class="section-copy">
+                Open Telegram, tap Start, and let Ayla begin asking for the moments, photos, clips, and context that should not be lost.
+              </p>
+              <%= link_to "Connect Telegram", @telegram_connect_url,
+                  target: "_blank",
+                  rel: "noopener",
+                  class: "button-primary" %>
+              <p class="field-hint">This opens <strong>@<%= @telegram_bot_username %></strong>. The secure link expires after 15 minutes.</p>
+            </div>
+          <% else %>
+            <p class="section-copy">
+              Add <code>TELEGRAM_BOT_USERNAME</code> to your environment to show the one-tap connect link here.
+            </p>
+          <% end %>
+        </div>
+
+        <div class="<%= @assistant_channel == 'whatsapp' ? '' : 'is-hidden' %>" data-assistant-channel-panel="whatsapp">
+          <div class="field-grid">
+            <p class="section-copy">
+              Add the WhatsApp number Ayla should use for this workspace. We will use this as the primary contact while the direct WhatsApp connector is being wired.
+            </p>
+
+            <div class="field-stack">
+              <label class="field-label">WhatsApp number</label>
+              <%= telephone_field_tag "user_preference[whatsapp_number]", @whatsapp_number, class: "field-input", placeholder: "+598 99 123 456", autocomplete: "tel", data: { autosave_debounce: true } %>
+            </div>
+
+            <p class="field-hint">Use the full international format so we can plug it straight into the real WhatsApp integration.</p>
+          </div>
+        </div>
+
+      <% end %>
     </div>
-  </section>
 
-  <section class="settings-layout">
-    <div class="stack">
-      <div class="surface-panel form-card">
-        <div class="form-card__header">
-          <span class="eyebrow">Profile</span>
-          <h2 class="section-title" style="font-size: clamp(1.5rem, 4vw, 2.2rem); max-width: none;">Ground the assistant in who you are.</h2>
-          <p class="section-copy">Your bio and timezone help Ayla prompt you at the right time and keep drafts anchored to your work.</p>
-        </div>
-
-        <%= form_with url: settings_path, method: :patch, class: "field-grid" do %>
-          <div class="field-stack">
-            <label class="field-label">Bio</label>
-            <%= text_area_tag "user_profile[bio]", @profile.bio, rows: 4,
-                class: "field-input",
-                placeholder: "What do you build, create, or want to be known for?" %>
-          </div>
-
-          <div class="field-stack">
-            <label class="field-label">Timezone</label>
-            <%= select_tag "user_profile[timezone]",
-                options_for_select(ActiveSupport::TimeZone.all.map { |tz| [tz.to_s, tz.name] }, @profile.timezone),
-                class: "field-input" %>
-          </div>
-
-          <%= submit_tag "Save profile", class: "button-primary button-primary--full cursor-pointer" %>
-        <% end %>
+    <div class="surface-panel form-card" id="workspace-defaults">
+      <div class="form-card__header">
+        <span class="eyebrow">Workspace defaults</span>
+        <h2 class="section-title" style="font-size: clamp(1.5rem, 4vw, 2.2rem); max-width: none;">Keep timing and language aligned with the operator.</h2>
       </div>
 
-      <div class="surface-panel form-card">
-        <div class="form-card__header">
-          <span class="eyebrow">Preferences</span>
-          <h2 class="section-title" style="font-size: clamp(1.5rem, 4vw, 2.2rem); max-width: none;">Tune the tone and publishing rhythm.</h2>
-          <p class="section-copy">Tell Ayla how often to stay on you and what kind of voice should come through in the drafts.</p>
+      <%= form_with url: settings_path, method: :patch, class: "field-grid", data: { autosave_form: true } do %>
+        <div class="field-stack">
+          <label class="field-label">Timezone</label>
+          <%= select_tag "user_profile[timezone]",
+              options_for_select(ActiveSupport::TimeZone.all.map { |tz| [tz.to_s, tz.name] }, @profile.timezone),
+              class: "field-input" %>
         </div>
 
-        <%= form_with url: settings_path, method: :patch, class: "field-grid" do %>
-          <div class="field-stack">
-            <label class="field-label">Tone</label>
-            <%= select_tag "user_preference[tone]",
-                options_for_select(UserPreference::TONES.map { |tone| [tone.titleize, tone] }, @preference.tone),
-                class: "field-input" %>
-          </div>
-
-          <div class="field-stack">
-            <label class="field-label">Posting frequency</label>
-            <%= select_tag "user_preference[posting_frequency]",
-                options_for_select(UserPreference::FREQUENCIES.map { |frequency| [frequency.titleize, frequency] }, @preference.posting_frequency),
-                class: "field-input" %>
-          </div>
-
-          <div class="field-stack">
-            <label class="field-label">Custom instructions</label>
-            <%= text_area_tag "user_preference[custom_instructions]", @preference.custom_instructions, rows: 4,
-                class: "field-input",
-                placeholder: "Examples: keep it more reflective, stay concise, push for story angles, avoid sounding polished." %>
-          </div>
-
-          <%= submit_tag "Save preferences", class: "button-primary button-primary--full cursor-pointer" %>
-        <% end %>
-      </div>
-    </div>
-
-    <div class="stack">
-      <div class="surface-panel surface-panel--soft">
-        <div class="form-card__header">
-          <span class="eyebrow">Telegram</span>
-          <h2 class="section-title" style="font-size: clamp(1.5rem, 4vw, 2.2rem); max-width: none;">Connect the assistant where life actually happens.</h2>
+        <div class="field-stack">
+          <label class="field-label">Language</label>
+          <%= text_field_tag "user_profile[language]", @profile.language, class: "field-input", placeholder: "en", data: { autosave_debounce: true } %>
         </div>
-
-        <% if @telegram&.active? %>
-          <div class="mini-panel">
-            <span class="mini-panel__label">Linked account</span>
-            <strong class="mini-panel__title">@<%= @telegram.username || @telegram.first_name %></strong>
-            <p>Connected since <%= @telegram.connected_at&.strftime("%b %d, %Y") %>. Ayla can already prompt, collect, and draft from chat.</p>
-          </div>
-        <% elsif @telegram_connect_url.present? %>
-          <p class="section-copy">
-            Open Telegram, tap Start, and let Ayla begin asking for the moments, photos, clips, and context that should not be lost.
-          </p>
-          <%= link_to "Connect Telegram", @telegram_connect_url,
-              target: "_blank",
-              rel: "noopener",
-              class: "button-primary" %>
-          <p class="field-hint">This opens <strong>@<%= @telegram_bot_username %></strong>. The secure link expires after 15 minutes.</p>
-        <% else %>
-          <p class="section-copy">
-            Add <code>TELEGRAM_BOT_USERNAME</code> to your environment to show the one-tap connect link here.
-          </p>
-        <% end %>
-      </div>
-
-      <div class="surface-panel">
-        <span class="eyebrow">What Ayla will do</span>
-        <div class="stack">
-          <div class="mini-panel">
-            <span class="mini-panel__label">Remind</span>
-            <p>Notice when you have gone quiet and nudge you before another week slips by undocumented.</p>
-          </div>
-          <div class="mini-panel">
-            <span class="mini-panel__label">Ask</span>
-            <p>Request the photo, clip, voice note, or detail that turns a vague thought into a usable post.</p>
-          </div>
-          <div class="mini-panel">
-            <span class="mini-panel__label">Draft</span>
-            <p>Convert those real fragments into posts and stories that still feel grounded in your voice.</p>
-          </div>
-        </div>
-      </div>
+      <% end %>
     </div>
   </section>
 </div>

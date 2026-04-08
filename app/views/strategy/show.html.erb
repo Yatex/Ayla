@@ -1,0 +1,115 @@
+<div class="page-shell">
+  <section class="workflow-grid">
+    <div class="surface-panel form-card workflow-panel workflow-panel--wide">
+      <div class="workflow-panel__header">
+        <div>
+          <span class="eyebrow">Strategy</span>
+          <h1 class="section-title" style="font-size: clamp(1.5rem, 4vw, 2.15rem); max-width: none;">Brand direction</h1>
+        </div>
+
+        <div class="workflow-panel__meta">
+          <span class="status-pill status-pill--approved"><%= @strategy_completion[:percent] %>% defined</span>
+          <details class="inline-guide">
+            <summary>Guide</summary>
+            <p>Keep this page focused on who you are, who you help, and what Ayla should optimize for across every campaign and post.</p>
+          </details>
+        </div>
+      </div>
+
+      <%= form_with url: strategy_path, method: :patch, class: "field-grid", data: { autosave_form: true } do %>
+        <div class="field-stack">
+          <label class="field-label">Brand summary</label>
+          <%= text_area_tag "user_profile[brand_summary]", @profile.brand_summary, rows: 4, class: "field-input", data: { autosave_debounce: true }, placeholder: "What is the personal brand about at a high level?" %>
+        </div>
+
+        <div class="field-stack">
+          <label class="field-label">Positioning</label>
+          <%= text_area_tag "user_profile[positioning]", @profile.positioning, rows: 4, class: "field-input", data: { autosave_debounce: true }, placeholder: "What makes this point of view distinct, credible, and valuable?" %>
+        </div>
+
+        <div class="field-stack">
+          <label class="field-label">Audience</label>
+          <%= text_area_tag "user_profile[target_audience]", @profile.target_audience, rows: 4, class: "field-input", data: { autosave_debounce: true }, placeholder: "Who is the ideal audience, what stage are they in, and what do they need from you?" %>
+        </div>
+
+        <div class="field-stack">
+          <label class="field-label">Objectives</label>
+          <%= text_area_tag "user_profile[strategic_objectives]", @profile.strategic_objectives, rows: 4, class: "field-input", data: { autosave_debounce: true }, placeholder: "Examples: grow authority, generate leads, support launches, stay top of mind." %>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="surface-panel form-card workflow-panel">
+      <div class="workflow-panel__header">
+        <div>
+          <span class="eyebrow">Content system</span>
+          <h2 class="section-title" style="font-size: clamp(1.3rem, 4vw, 1.85rem); max-width: none;">Voice, pillars, and priorities</h2>
+        </div>
+      </div>
+
+      <%= form_with url: strategy_path, method: :patch, class: "field-grid", data: { autosave_form: true } do %>
+        <div class="field-stack">
+          <label class="field-label">Tone of voice</label>
+          <%= select_tag "user_preference[tone]",
+              options_for_select(UserPreference::TONES.map { |tone| [tone.titleize, tone] }, @preference.tone),
+              class: "field-input" %>
+        </div>
+
+        <div class="field-stack">
+          <label class="field-label">Working rhythm</label>
+          <%= select_tag "user_preference[posting_frequency]",
+              options_for_select(UserPreference::FREQUENCIES.map { |frequency| [frequency.humanize, frequency] }, @preference.posting_frequency),
+              class: "field-input" %>
+        </div>
+
+        <div class="field-stack">
+          <label class="field-label">Content pillars</label>
+          <%= text_area_tag "user_preference[content_topics]", @topics_text, rows: 6, class: "field-input", data: { autosave_debounce: true }, placeholder: "Founder perspective\nProof and case studies\nProduct education\nIndustry commentary" %>
+          <p class="field-hint">One pillar per line. Ayla uses these to keep the content system coherent.</p>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="surface-panel form-card workflow-panel">
+      <div class="workflow-panel__header">
+        <div>
+          <span class="eyebrow">Offers and proof</span>
+          <h2 class="section-title" style="font-size: clamp(1.3rem, 4vw, 1.85rem); max-width: none;">What the market should associate with you</h2>
+        </div>
+      </div>
+
+      <%= form_with url: strategy_path, method: :patch, class: "field-grid", data: { autosave_form: true } do %>
+        <div class="field-stack">
+          <label class="field-label">Main offers / expertise</label>
+          <%= text_area_tag "user_profile[main_offers]", @profile.main_offers, rows: 4, class: "field-input", data: { autosave_debounce: true }, placeholder: "What do you sell, what do you know deeply, and what should content reinforce?" %>
+        </div>
+
+        <div class="field-stack">
+          <label class="field-label">Proof / operator context</label>
+          <%= text_area_tag "user_profile[bio]", @profile.bio, rows: 5, class: "field-input", data: { autosave_debounce: true }, placeholder: "Experience, credibility markers, customer context, and truths Ayla should never lose." %>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="surface-panel form-card workflow-panel">
+      <div class="workflow-panel__header">
+        <div>
+          <span class="eyebrow">Constraints</span>
+          <h2 class="section-title" style="font-size: clamp(1.3rem, 4vw, 1.85rem); max-width: none;">Strategic notes for Ayla</h2>
+        </div>
+      </div>
+
+      <%= form_with url: strategy_path, method: :patch, class: "field-grid", data: { autosave_form: true } do %>
+        <div class="field-stack">
+          <label class="field-label">Strategic notes</label>
+          <%= text_area_tag "user_profile[strategic_notes]", @profile.strategic_notes, rows: 4, class: "field-input", data: { autosave_debounce: true }, placeholder: "Constraints, priorities, lines you do not cross, or themes to push harder this quarter." %>
+        </div>
+
+        <div class="field-stack">
+          <label class="field-label">Ayla operating instructions</label>
+          <%= text_area_tag "user_preference[custom_instructions]", @preference.custom_instructions, rows: 5, class: "field-input", data: { autosave_debounce: true }, placeholder: "Examples: always sharpen the hook, prefer proof over hype, tie content back to the offer, keep the language grounded." %>
+        </div>
+      <% end %>
+    </div>
+  </section>
+</div>

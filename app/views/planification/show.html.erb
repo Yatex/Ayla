@@ -1,0 +1,251 @@
+<div class="page-shell">
+  <section class="workflow-grid workflow-grid--planification">
+    <div class="surface-panel workflow-panel workflow-panel--wide">
+      <div class="workflow-panel__header">
+        <div>
+          <span class="eyebrow">Planification</span>
+          <h1 class="section-title" style="font-size: clamp(1.5rem, 4vw, 2.15rem); max-width: none;">Campaign roadmap</h1>
+        </div>
+
+        <div class="workflow-panel__meta">
+          <span class="status-pill status-pill--draft"><%= pluralize(@campaign_plans.count, "plan") %></span>
+          <details class="inline-guide">
+            <summary>Guide</summary>
+            <p>Think in phases of 3 to 12 months. Each plan should translate strategy into a focused period with one clear message and measurable outcomes.</p>
+          </details>
+        </div>
+      </div>
+
+      <div class="roadmap-strip">
+        <% if @campaign_plans.any? %>
+          <% @campaign_plans.each do |plan| %>
+            <a href="#campaign-plan-<%= plan.id %>" class="roadmap-step <%= 'roadmap-step--active' if plan == @active_plan %>">
+              <span class="<%= campaign_plan_status_badge_class(plan.status) %>"><%= plan.status.titleize %></span>
+              <strong><%= plan.title %></strong>
+              <span><%= plan.timeline_label %></span>
+            </a>
+          <% end %>
+        <% else %>
+          <div class="empty-card">
+            <h3 class="list-card__title">No campaigns yet.</h3>
+            <p>Create the first plan so Calendar starts following a real roadmap instead of disconnected posts.</p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="surface-panel workflow-panel">
+      <div class="workflow-panel__header">
+        <div>
+          <span class="eyebrow">Active now</span>
+          <h2 class="section-title" style="font-size: clamp(1.3rem, 4vw, 1.85rem); max-width: none;">Current phase</h2>
+        </div>
+      </div>
+
+      <% if @active_plan.present? %>
+        <div class="plan-summary-card">
+          <div class="list-card__meta">
+            <span class="<%= campaign_plan_status_badge_class(@active_plan.status) %>"><%= @active_plan.status.titleize %></span>
+            <span><%= @active_plan.duration_in_months %> month window</span>
+          </div>
+          <h3 class="list-card__title"><%= @active_plan.title %></h3>
+          <p class="section-copy"><%= @active_plan.message_angle.presence || @active_plan.objective.presence || "This campaign still needs a sharper angle." %></p>
+          <div class="pill-row">
+            <% @active_plan.focus_areas_list.each do |area| %>
+              <span class="pill-tag"><%= area %></span>
+            <% end %>
+          </div>
+        </div>
+      <% else %>
+        <div class="empty-card">
+          <h3 class="list-card__title">Nothing active right now.</h3>
+          <p>Promote one plan to active so Dashboard and Calendar can align around a live campaign.</p>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="surface-panel workflow-panel">
+      <div class="workflow-panel__header">
+        <div>
+          <span class="eyebrow">Next up</span>
+          <h2 class="section-title" style="font-size: clamp(1.3rem, 4vw, 1.85rem); max-width: none;">Sequencing</h2>
+        </div>
+      </div>
+
+      <% if @next_plan.present? %>
+        <div class="plan-summary-card">
+          <div class="list-card__meta">
+            <span class="<%= campaign_plan_status_badge_class(@next_plan.status) %>"><%= @next_plan.status.titleize %></span>
+            <span>Starts <%= @next_plan.start_on.strftime("%b %-d, %Y") %></span>
+          </div>
+          <h3 class="list-card__title"><%= @next_plan.title %></h3>
+          <p class="section-copy"><%= @next_plan.objective.presence || "Define the objective for this next phase." %></p>
+        </div>
+      <% elsif @past_plans.any? %>
+        <div class="plan-summary-card">
+          <div class="list-card__meta">
+            <span class="<%= campaign_plan_status_badge_class(@past_plans.first.status) %>"><%= @past_plans.first.status.titleize %></span>
+            <span>Most recent finished cycle</span>
+          </div>
+          <h3 class="list-card__title"><%= @past_plans.first.title %></h3>
+          <p class="section-copy"><%= @past_plans.first.learnings.presence || "Capture what worked so the next campaign starts smarter." %></p>
+        </div>
+      <% else %>
+        <div class="empty-card">
+          <h3 class="list-card__title">No future sequence yet.</h3>
+          <p>Add the next campaign now so Ayla can plan beyond the current week.</p>
+        </div>
+      <% end %>
+    </div>
+
+    <% @campaign_plans.each do |plan| %>
+      <% metrics = @plan_metrics.fetch(plan.id, {}) %>
+      <div class="surface-panel form-card workflow-panel workflow-panel--wide" id="campaign-plan-<%= plan.id %>">
+        <div class="workflow-panel__header">
+          <div>
+            <span class="eyebrow">Campaign plan</span>
+            <h2 class="section-title" style="font-size: clamp(1.3rem, 4vw, 1.85rem); max-width: none;"><%= plan.title %></h2>
+          </div>
+
+          <div class="workflow-panel__meta">
+            <span class="<%= campaign_plan_status_badge_class(plan.status) %>"><%= plan.status.titleize %></span>
+            <span class="field-hint"><%= metrics[:draft_count].to_i %> drafts in this window</span>
+          </div>
+        </div>
+
+        <%= form_with model: plan, url: campaign_plan_path(plan), method: :patch, class: "field-grid", data: { autosave_form: true } do |form| %>
+          <div class="field-stack">
+            <label class="field-label">Campaign name</label>
+            <%= form.text_field :title, class: "field-input", data: { autosave_debounce: true } %>
+          </div>
+
+          <div class="field-stack">
+            <label class="field-label">Status</label>
+            <%= form.select :status,
+                options_for_select(CampaignPlan::STATUSES.map { |status| [status.titleize, status] }, plan.status),
+                {},
+                class: "field-input" %>
+          </div>
+
+          <div class="field-stack field-stack--inline">
+            <div>
+              <label class="field-label">Start</label>
+              <%= form.date_field :start_on, class: "field-input" %>
+            </div>
+            <div>
+              <label class="field-label">End</label>
+              <%= form.date_field :end_on, class: "field-input" %>
+            </div>
+          </div>
+
+          <div class="field-stack">
+            <label class="field-label">Objective</label>
+            <%= form.text_field :objective, class: "field-input", data: { autosave_debounce: true }, placeholder: "What should this campaign accomplish?" %>
+          </div>
+
+          <div class="field-stack">
+            <label class="field-label">Message / angle</label>
+            <%= form.text_area :message_angle, rows: 3, class: "field-input", data: { autosave_debounce: true }, placeholder: "What is the main narrative or argument for this period?" %>
+          </div>
+
+          <div class="field-stack">
+            <label class="field-label">Focus areas</label>
+            <%= text_area_tag "campaign_plan[focus_areas_text]", plan.focus_areas_text, rows: 3, class: "field-input", data: { autosave_debounce: true }, placeholder: "One focus area per line" %>
+          </div>
+
+          <div class="field-stack">
+            <label class="field-label">Alignment to strategy</label>
+            <%= form.text_area :strategic_alignment, rows: 3, class: "field-input", data: { autosave_debounce: true }, placeholder: "How does this phase support the broader positioning, audience, and objectives?" %>
+          </div>
+
+          <div class="field-stack">
+            <label class="field-label">Expected outcomes</label>
+            <%= form.text_area :expected_outcomes, rows: 3, class: "field-input", data: { autosave_debounce: true }, placeholder: "What should improve by the end of this campaign?" %>
+          </div>
+
+          <div class="field-stack">
+            <label class="field-label">Learnings / notes</label>
+            <%= form.text_area :learnings, rows: 3, class: "field-input", data: { autosave_debounce: true }, placeholder: "Capture what worked, what failed, and what to carry into the next phase." %>
+          </div>
+
+          <div class="plan-metrics-row">
+            <div class="mini-panel">
+              <span class="mini-panel__label">Drafts</span>
+              <strong class="mini-panel__title"><%= metrics[:draft_count].to_i %></strong>
+              <p>Content generated during this campaign window.</p>
+            </div>
+
+            <div class="mini-panel">
+              <span class="mini-panel__label">Pending</span>
+              <strong class="mini-panel__title"><%= metrics[:pending_count].to_i %></strong>
+              <p>Items still waiting for decision.</p>
+            </div>
+
+            <div class="mini-panel">
+              <span class="mini-panel__label">Approved</span>
+              <strong class="mini-panel__title"><%= metrics[:approved_count].to_i %></strong>
+              <p>Approved content already aligned to this phase.</p>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="surface-panel form-card workflow-panel workflow-panel--wide">
+      <div class="workflow-panel__header">
+        <div>
+          <span class="eyebrow">Add next phase</span>
+          <h2 class="section-title" style="font-size: clamp(1.3rem, 4vw, 1.85rem); max-width: none;">Create the next campaign</h2>
+        </div>
+      </div>
+
+      <%= form_with model: @new_plan, url: campaign_plans_path, class: "field-grid" do |form| %>
+        <div class="field-stack">
+          <label class="field-label">Campaign name</label>
+          <%= form.text_field :title, class: "field-input", placeholder: "Q3 authority build" %>
+        </div>
+
+        <div class="field-stack">
+          <label class="field-label">Status</label>
+          <%= form.select :status,
+              options_for_select(CampaignPlan::STATUSES.map { |status| [status.titleize, status] }, @new_plan.status),
+              {},
+              class: "field-input" %>
+        </div>
+
+        <div class="field-stack field-stack--inline">
+          <div>
+            <label class="field-label">Start</label>
+            <%= form.date_field :start_on, class: "field-input" %>
+          </div>
+          <div>
+            <label class="field-label">End</label>
+            <%= form.date_field :end_on, class: "field-input" %>
+          </div>
+        </div>
+
+        <div class="field-stack">
+          <label class="field-label">Objective</label>
+          <%= form.text_field :objective, class: "field-input", placeholder: "What should this campaign accomplish?" %>
+        </div>
+
+        <div class="field-stack">
+          <label class="field-label">Message / angle</label>
+          <%= form.text_area :message_angle, rows: 3, class: "field-input", placeholder: "What is the central story or argument for this phase?" %>
+        </div>
+
+        <div class="field-stack">
+          <label class="field-label">Focus areas</label>
+          <%= text_area_tag "campaign_plan[focus_areas_text]", nil, rows: 3, class: "field-input", placeholder: "One focus area per line" %>
+        </div>
+
+        <div class="field-stack">
+          <label class="field-label">Expected outcomes</label>
+          <%= form.text_area :expected_outcomes, rows: 3, class: "field-input", placeholder: "What should improve by the end of this period?" %>
+        </div>
+
+        <%= form.submit "Create campaign", class: "button-primary button-primary--sm cursor-pointer" %>
+      <% end %>
+    </div>
+  </section>
+</div>

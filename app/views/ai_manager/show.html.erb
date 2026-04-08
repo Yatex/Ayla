@@ -1,0 +1,48 @@
+<div class="page-shell page-shell--narrow">
+  <section class="surface-panel form-card">
+    <div class="form-card__header">
+      <span class="eyebrow">AI Manager</span>
+      <h1 class="section-title" style="font-size: clamp(1.55rem, 4vw, 2.25rem); max-width: none;">Configure how Ayla should manage your content.</h1>
+    </div>
+
+    <%= form_with url: ai_manager_path, method: :patch, class: "field-grid" do %>
+      <div class="field-stack">
+        <label class="field-label">Manager personality</label>
+        <%= select_tag "user_preference[tone]",
+            options_for_select(UserPreference::TONES.map { |tone| [tone.titleize, tone] }, @preference.tone),
+            class: "field-input" %>
+      </div>
+
+      <div class="field-stack">
+        <label class="field-label">Working cadence</label>
+        <%= select_tag "user_preference[posting_frequency]",
+            options_for_select(UserPreference::FREQUENCIES.map { |frequency| [frequency.humanize, frequency] }, @preference.posting_frequency),
+            class: "field-input" %>
+      </div>
+
+      <div class="field-stack">
+        <label class="field-label">What we like to talk about</label>
+        <%= text_area_tag "user_preference[content_topics]", @topics_text, rows: 5,
+            class: "field-input",
+            placeholder: "Founder lessons\nProduct updates\nCustomer wins\nBehind the scenes" %>
+        <p class="field-hint">Use one topic per line or separate them with commas.</p>
+      </div>
+
+      <div class="field-stack">
+        <label class="field-label">What Ayla needs to know about us</label>
+        <%= text_area_tag "user_profile[bio]", @profile.bio, rows: 5,
+            class: "field-input",
+            placeholder: "What do you build, who do you help, and what should always stay true about your brand?" %>
+      </div>
+
+      <div class="field-stack">
+        <label class="field-label">Manager instructions</label>
+        <%= text_area_tag "user_preference[custom_instructions]", @preference.custom_instructions, rows: 6,
+            class: "field-input",
+            placeholder: "Examples: keep the voice confident but grounded, suggest stronger hooks, avoid generic inspiration, push for clearer proof and sharper positioning." %>
+      </div>
+
+      <%= submit_tag "Save AI Manager", class: "button-primary button-primary--full cursor-pointer" %>
+    <% end %>
+  </section>
+</div>
